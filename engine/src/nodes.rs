@@ -89,49 +89,51 @@ impl Node {
     /// Given a list of Nodes, see whether this pattern could exist
     /// and, if so, what to replace each Node with.
     pub fn select(nodes: &[Node]) -> PartialResult<Vec<Option<Node>>> {
-        if nodes.is_empty() {
-            unreachable!("You can't select 0 nodes!")
-        }
-        if nodes.len() == 1 {
-            PartialResult::Continue
-        } else if nodes.len() == 2 && nodes[0].cancels_with(nodes[1]) {
-            PartialResult::Success(vec![None, None])
-        } else {
-            let (original_idxes, sorted): (Vec<_>, Vec<_>) = nodes
-                .iter()
-                .cloned()
-                .enumerate()
-                .sorted_unstable_by_key(|x| x.1)
-                .unzip();
-            let unsort =
-                |v: Vec<Option<Node>>| original_idxes.iter().map(|&idx| v[idx]).collect_vec();
+        match nodes.len() {
+            0 => unreachable!("You can't select 0 nodes!"),
+            1 => PartialResult::Continue,
+            2 if nodes[0].cancels_with(nodes[1]) =>
+                PartialResult::Success(vec![None, None]),
+            _ => {
+                let (original_idxes, sorted): (Vec<_>, Vec<_>) = nodes
+                    .iter()
+                    .cloned()
+                    .enumerate()
+                    .sorted_unstable_by_key(|x| x.1)
+                    .unzip();
+                let unsort =
+                    |v: Vec<Option<Node>>| original_idxes.iter().map(|&idx| v[idx]).collect_vec();
 
-            if sorted == [Node::Yin, Node::Yang] {
-                // Yin and Yang become change
-                PartialResult::Success(vec![Some(Node::Change), Some(Node::Change)])
-            } else if sorted == [Node::Heavenly, Node::Earthly]
-                || sorted == [Node::Heavenly, Node::Human]
-                || sorted == [Node::Earthly, Node::Human]
-            {
-                // 2 of the cycle can be selected but don't do anything
-                PartialResult::Continue
-            } else if sorted == [Node::Heavenly, Node::Earthly, Node::Human] {
-                PartialResult::Success(vec![None, None, None])
-            } else if sorted.len() == 2 && sorted[0].is_elemental() && sorted[1] == Node::Qi {
-                // Qi matches with elements and turns the other into qi
-                PartialResult::Success(unsort(vec![Some(Node::Qi), None]))
-            } else if sorted == [Node::Heavenly, Node::Yang] {
-                PartialResult::Success(unsort(vec![Some(Node::Yang), None]))
-            } else if sorted == [Node::Earthly, Node::Yin] {
-                PartialResult::Success(unsort(vec![Some(Node::Yin), None]))
-            } else if sorted.len() == 2 && sorted[0].is_elemental() && sorted[1] == Node::Human {
-                PartialResult::Success(unsort(vec![None, Some(sorted[0])]))
-            } else if sorted.len() == 2 && sorted[1] == Node::Change && sorted[0].change().is_some()
-            {
-                // Change nodes
-                PartialResult::Success(unsort(vec![sorted[0].change(), None]))
-            } else {
-                PartialResult::Failure
+                match sorted.as_slice() {
+                    // Yin and Yang become change
+                    [Node::Yin, Node::Yang] => PartialResult::Success(vec![Some(Node::Change), Some(Node::Change)]),
+
+                    // 2 of the cycle can be selected but don't do anything
+                    [Node::Heavenly, Node::Earthly] | [Node::Heavenly, Node::Human] | [Node::Earthly, Node::Human] =>
+                        PartialResult::Continue,
+
+                    [Node::Heavenly, Node::Earthly, Node::Human] =>
+                        PartialResult::Success(vec![None, None, None]),
+
+                    // Qi matches with elements and turns the other into qi
+                    [element, Node::Qi] if element.is_elemental() =>
+                        PartialResult::Success(unsort(vec![Some(Node::Qi), None])),
+
+                    // Heavenly things attract Yang, Earthly things attract Yin
+                    [Node::Heavenly, Node::Yang] =>
+                        PartialResult::Success(unsort(vec![Some(Node::Yang), None])),
+                    [Node::Earthly, Node::Yin] =>
+                        PartialResult::Success(unsort(vec![Some(Node::Yin), None])),
+
+                    // Human ingenuity can attract any element
+                    [element, Node::Human] if element.is_elemental() =>
+                        PartialResult::Success(unsort(vec![None, Some(*element)])),
+
+                    [changeable, Node::Change] if changeable.can_change() =>
+                        // Change nodes
+                        PartialResult::Success(unsort(vec![changeable.change(), None])),
+                    _ => PartialResult::Failure,
+                }
             }
         }
     }
