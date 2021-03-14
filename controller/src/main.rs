@@ -43,7 +43,9 @@ async fn main() {
             Transition::None => {}
             Transition::Push(m) => mode_stack.push(m),
             Transition::Pop => {
-                mode_stack.pop();
+                if mode_stack.len() > 1 {
+                    mode_stack.pop();
+                }
             }
             Transition::Swap(m) => *mode_stack.last_mut().unwrap() = m,
         }

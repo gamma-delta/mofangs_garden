@@ -58,11 +58,7 @@ impl ModeGame {
 
         let hovered_coord =
             Coordinate::from_pixel(dmouse_x, dmouse_y, Spacing::PointyTop(HEX_SIZE));
-        self.hovered_slot = if self.board.try_get_node(hovered_coord).is_none() {
-            None
-        } else {
-            Some(hovered_coord)
-        };
+        self.hovered_slot = Some(hovered_coord).filter(|c| self.board.in_bounds(*c));
 
         if let Some(hovered) = self.hovered_slot {
             if is_mouse_button_released(MouseButton::Left) {
@@ -76,7 +72,7 @@ impl ModeGame {
                     let combo = self
                         .selected_slots
                         .iter()
-                        .map(|&c| self.board.get_node(c).unwrap())
+                        .flat_map(|&c| self.board.get_node(c))
                         .collect::<Vec<_>>();
                     if let PartialResult::Success(change) = Node::select(&combo) {
                         // nice!
@@ -194,7 +190,7 @@ impl ModeGame {
         match at
             .neighbors()
             .iter()
-            .position(|&coord| self.board.try_get_node(coord).flatten().is_some())
+            .position(|&coord| self.board.get_node(coord).is_some())
         {
             Some(pos) => {
                 // At least one neighbor exists, iter around it
@@ -204,7 +200,7 @@ impl ModeGame {
                     .skip(pos + 1)
                     .take(6)
                     .fold((0, 0), |(maxrun, run), &neighbor| {
-                        if self.board.try_get_node(neighbor).flatten().is_some() {
+                        if self.board.get_node(neighbor).is_some() {
                             (maxrun.max(run), 0)
                         } else {
                             (maxrun, run + 1)
@@ -247,7 +243,7 @@ impl ModeGame {
                 let potential_select = self
                     .selected_slots
                     .iter()
-                    .map(|c| self.board.get_node(*c).unwrap())
+                    .flat_map(|c| self.board.get_node(*c))
                     .chain(iter::once(node))
                     .collect::<Vec<_>>();
                 Node::select(&potential_select).is_valid()
