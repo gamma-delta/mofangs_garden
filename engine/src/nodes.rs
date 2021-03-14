@@ -26,13 +26,13 @@ pub enum Node {
 pub enum PartialResult<T> {
     Success(T),
     Continue,
-    Failure
+    Failure,
 }
 
 impl<T> PartialResult<T> {
     /// Is this a success or a needs-more-info?
-    pub fn is_valid(self) -> bool {
-        return !matches!(self, PartialResult::Failure);
+    pub fn is_valid(&self) -> bool {
+        !matches!(self, PartialResult::Failure)
     }
 }
 
@@ -56,16 +56,17 @@ impl Node {
     fn cancels_with(self, other: Node) -> bool {
         // Human cancels *all* elementals
         if self == Node::Human && other.is_elemental()
-            || other == Node::Human && self.is_elemental() {
+            || other == Node::Human && self.is_elemental()
+        {
             return true;
         }
         // One-to-one cancellations
         let expect = match self {
-            Node::Fire =>  Some(Node::Metal),
-            Node::Metal => Some(Node::Earth),
+            Node::Fire => Some(Node::Metal),
+            Node::Metal => Some(Node::Wood),
+            Node::Wood => Some(Node::Earth),
             Node::Earth => Some(Node::Water),
-            Node::Water => Some(Node::Wood),
-            Node::Wood => Some(Node::Fire),
+            Node::Water => Some(Node::Fire),
 
             Node::Heavenly => Some(Node::Yang),
             Node::Earthly => Some(Node::Yin),
@@ -74,7 +75,7 @@ impl Node {
 
             Node::Qi => Some(Node::Qi),
             Node::Change => Some(Node::Change),
-            _ => None
+            _ => None,
         };
         expect.filter(|o| *o == other).is_some()
     }
@@ -99,7 +100,7 @@ impl Node {
     /// Given a list of Nodes, see whether this pattern could exist
     /// and, if so, what to replace each Node with.
     pub fn select(nodes: &[Node]) -> PartialResult<Vec<Option<Node>>> {
-        if nodes.len() == 0 {
+        if nodes.is_empty() {
             unreachable!("You can't select 0 nodes!")
         }
         if nodes.len() == 1 {
@@ -130,7 +131,8 @@ impl Node {
             } else if sorted.len() == 2 && sorted[0].is_elemental() && sorted[1] == Node::Qi {
                 // Qi matches with elements and turns the other into qi
                 PartialResult::Success(unsort(vec![Some(Node::Qi), None]))
-            } else if sorted.len() == 2 && sorted[1] == Node::Change && sorted[0].change().is_some() {
+            } else if sorted.len() == 2 && sorted[1] == Node::Change && sorted[0].change().is_some()
+            {
                 PartialResult::Success(unsort(vec![sorted[0].change(), None]))
             } else {
                 PartialResult::Failure

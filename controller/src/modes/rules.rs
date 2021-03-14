@@ -1,17 +1,11 @@
-use std::f32::consts::{self, TAU};
-
-use crate::{
-    drawutils::{self, node},
-    Globals, Transition, HEX_HEIGHT, HEX_WIDTH, NODE_RADIUS, WINDOW_WIDTH,
-};
+use crate::{drawutils, Globals, Transition, HEX_HEIGHT, HEX_WIDTH, WINDOW_WIDTH};
 
 use macroquad::prelude::*;
-use mofang_engine::Node;
 
 pub struct ModeRules;
 
 impl ModeRules {
-    pub fn update(&mut self, globals: &mut Globals) -> Transition {
+    pub fn update(&mut self, _globals: &mut Globals) -> Transition {
         if is_key_pressed(KeyCode::Escape) {
             Transition::Pop
         } else {

@@ -3,11 +3,7 @@ mod drawutils;
 mod modes;
 
 use assets::Assets;
-use macroquad::{
-    hash,
-    prelude::*,
-    ui::{root_ui, widgets},
-};
+use macroquad::prelude::*;
 use modes::{game::ModeGame, rules::ModeRules};
 use mofang_engine::Board;
 

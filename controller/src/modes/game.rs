@@ -2,21 +2,10 @@ use std::{f32::consts::TAU, iter};
 
 use enum_map::EnumMap;
 use hex2d::{Coordinate, Spacing};
-use macroquad::{
-    hash,
-    prelude::*,
-    ui::{
-        root_ui,
-        widgets::{self, Group},
-        Skin, Style,
-    },
-};
+use macroquad::prelude::*;
 use mofang_engine::{Board, Node, PartialResult};
 
-use crate::{
-    drawutils, Globals, Mode, Transition, HEX_HEIGHT, HEX_SIZE, HEX_WIDTH, NODE_RADIUS,
-    WINDOW_HEIGHT, WINDOW_WIDTH,
-};
+use crate::{drawutils, Globals, Mode, Transition, HEX_HEIGHT, HEX_SIZE, HEX_WIDTH, NODE_RADIUS};
 
 use super::rules::ModeRules;
 
@@ -46,7 +35,7 @@ impl ModeGame {
         this
     }
 
-    pub fn update(&mut self, globals: &mut Globals) -> Transition {
+    pub fn update(&mut self, _globals: &mut Globals) -> Transition {
         if self.won {
             // Forbid interacting with the board
             self.hovered_slot = None;
