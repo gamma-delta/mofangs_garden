@@ -23,16 +23,15 @@ pub fn node(globals: &Globals, node: Node, cx: f32, cy: f32, faded: bool) {
         Node::Qi => globals.assets.textures.qi,
     };
 
-    draw_texture(
-        tex,
-        cx - NODE_RADIUS,
-        cy - NODE_RADIUS,
-        if faded {
-            Color::new(1.0, 1.0, 1.0, 0.3)
-        } else {
-            WHITE
-        },
-    );
+    if faded {
+        gl_use_material(globals.assets.fade_shader);
+    }
+
+    draw_texture(tex, cx - NODE_RADIUS, cy - NODE_RADIUS, WHITE);
+
+    if faded {
+        gl_use_default_material();
+    }
 }
 
 /// Draw the text with the given size at the given position.

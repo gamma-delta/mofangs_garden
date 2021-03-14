@@ -108,17 +108,12 @@ impl ModeGame {
                 zero_coords.0 + BOARD_ORIGIN_X,
                 zero_coords.1 + BOARD_ORIGIN_Y,
             );
-            let border = if self.won {
-                Color::new(83.0 / 255.0, 49.0 / 255.0, 104.0 / 255.0, 1.0)
-            } else {
-                BLACK
-            };
-            let fill = if self.won {
-                Color::new(1.0, 231.0 / 255.0, 191.0 / 255.0, 1.0)
-            } else {
-                WHITE
-            };
-            draw_hexagon(coords.0, coords.1, HEX_SIZE, 1.0, true, border, fill);
+            draw_texture(
+                globals.assets.textures.hex,
+                coords.0 - HEX_WIDTH / 2.0,
+                coords.1 - HEX_HEIGHT / 2.0,
+                WHITE,
+            );
 
             let unfaded_node = if let Some(node) = self.board.get_node(hex_coord) {
                 let faded = !self.is_selectable(hex_coord);
@@ -199,19 +194,29 @@ impl ModeGame {
     }
 
     fn max_open_neighbors(&self, at: Coordinate) -> usize {
-        match at.neighbors().iter().position(|&coord| self.board.try_get_node(coord).flatten().is_some()) {
+        match at
+            .neighbors()
+            .iter()
+            .position(|&coord| self.board.try_get_node(coord).flatten().is_some())
+        {
             Some(pos) => {
                 // At least one neighbor exists, iter around it
-                at.neighbors().iter().cycle().skip(pos + 1).take(6).fold((0, 0), |(maxrun, run), &neighbor| {
-                    if self.board.try_get_node(neighbor).flatten().is_some() {
-                        (maxrun.max(run), 0)
-                    } else {
-                        (maxrun, run + 1)
-                    }
-                }).0
-            },
+                at.neighbors()
+                    .iter()
+                    .cycle()
+                    .skip(pos + 1)
+                    .take(6)
+                    .fold((0, 0), |(maxrun, run), &neighbor| {
+                        if self.board.try_get_node(neighbor).flatten().is_some() {
+                            (maxrun.max(run), 0)
+                        } else {
+                            (maxrun, run + 1)
+                        }
+                    })
+                    .0
+            }
             // Everything is empty and fine
-            None => 6
+            None => 6,
         }
     }
 
