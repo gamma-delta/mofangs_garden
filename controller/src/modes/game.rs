@@ -199,24 +199,20 @@ impl ModeGame {
     }
 
     fn max_open_neighbors(&self, at: Coordinate) -> usize {
-        // TODO: this is a horribly hacky and very slow way to do it.
-        // Best would be a lookup table based on a bitmask...
-        let find_with_offset = |skip| {
-            let mut max_run = 0;
-            let mut run = 0;
-            for &n_coord in at.neighbors().iter().cycle().skip(skip).take(6) {
-                let neighbor = self.board.try_get_node(n_coord);
-                let full = matches!(neighbor, Some(Some(_)));
-                if full {
-                    max_run = max_run.max(run);
-                    run = 0;
-                } else {
-                    run += 1;
-                }
-            }
-            max_run.max(run)
-        };
-        (0..6).map(find_with_offset).max().unwrap()
+        match at.neighbors().iter().position(|&coord| self.board.try_get_node(coord).flatten().is_some()) {
+            Some(pos) => {
+                // At least one neighbor exists, iter around it
+                at.neighbors().iter().cycle().skip(pos + 1).take(6).fold((0, 0), |(maxrun, run), &neighbor| {
+                    if self.board.try_get_node(neighbor).flatten().is_some() {
+                        (maxrun.max(run), 0)
+                    } else {
+                        (maxrun, run + 1)
+                    }
+                }).0
+            },
+            // Everything is empty and fine
+            None => 6
+        }
     }
 
     fn is_selectable(&self, coord: Coordinate) -> bool {
