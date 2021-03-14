@@ -138,7 +138,7 @@ impl Node {
                         PartialResult::Success(unsort(vec![None, Some(*element)]))
                     }
 
-                    [changeable, Node::Change] if changeable.change().is_some() =>
+                    [changeable, Node::Change] if changeable.can_change() =>
                     // Change nodes
                     {
                         PartialResult::Success(unsort(vec![changeable.change(), None]))
