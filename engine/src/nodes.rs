@@ -47,7 +47,7 @@ impl Node {
     /// What's the number of contiguous open nodes required to be selectable?
     pub fn freeness_req(self) -> usize {
         match self {
-            Node::Qi => 6,
+            Node::Qi => 5,
             _ => 3,
         }
     }
@@ -61,6 +61,11 @@ impl Node {
             Node::Wood => Some(Node::Earth),
             Node::Earth => Some(Node::Water),
             Node::Water => Some(Node::Fire),
+
+            Node::Heavenly => Some(Node::Yang),
+            Node::Yang => Some(Node::Heavenly),
+            Node::Earthly => Some(Node::Yin),
+            Node::Yin => Some(Node::Earthly),
 
             Node::Qi => Some(Node::Qi),
             Node::Change => Some(Node::Change),
@@ -92,8 +97,7 @@ impl Node {
         match nodes.len() {
             0 => unreachable!("You can't select 0 nodes!"),
             1 => PartialResult::Continue,
-            2 if nodes[0].cancels_with(nodes[1]) =>
-                PartialResult::Success(vec![None, None]),
+            2 if nodes[0].cancels_with(nodes[1]) => PartialResult::Success(vec![None, None]),
             _ => {
                 let (original_idxes, sorted): (Vec<_>, Vec<_>) = nodes
                     .iter()
@@ -106,32 +110,34 @@ impl Node {
 
                 match sorted.as_slice() {
                     // Yin and Yang become change
-                    [Node::Yin, Node::Yang] => PartialResult::Success(vec![Some(Node::Change), Some(Node::Change)]),
+                    [Node::Yin, Node::Yang] => {
+                        PartialResult::Success(vec![Some(Node::Change), Some(Node::Change)])
+                    }
 
                     // 2 of the cycle can be selected but don't do anything
-                    [Node::Heavenly, Node::Earthly] | [Node::Heavenly, Node::Human] | [Node::Earthly, Node::Human] =>
-                        PartialResult::Continue,
+                    [Node::Heavenly, Node::Earthly]
+                    | [Node::Heavenly, Node::Human]
+                    | [Node::Earthly, Node::Human] => PartialResult::Continue,
 
-                    [Node::Heavenly, Node::Earthly, Node::Human] =>
-                        PartialResult::Success(vec![None, None, None]),
+                    [Node::Heavenly, Node::Earthly, Node::Human] => {
+                        PartialResult::Success(vec![None, None, None])
+                    }
 
                     // Qi matches with elements and turns the other into qi
-                    [element, Node::Qi] if element.is_elemental() =>
-                        PartialResult::Success(unsort(vec![Some(Node::Qi), None])),
-
-                    // Heavenly things attract Yang, Earthly things attract Yin
-                    [Node::Heavenly, Node::Yang] =>
-                        PartialResult::Success(unsort(vec![Some(Node::Yang), None])),
-                    [Node::Earthly, Node::Yin] =>
-                        PartialResult::Success(unsort(vec![Some(Node::Yin), None])),
+                    [element, Node::Qi] if element.is_elemental() => {
+                        PartialResult::Success(unsort(vec![Some(Node::Qi), None]))
+                    }
 
                     // Human ingenuity can attract any element
-                    [element, Node::Human] if element.is_elemental() =>
-                        PartialResult::Success(unsort(vec![None, Some(*element)])),
+                    [element, Node::Human] if element.is_elemental() => {
+                        PartialResult::Success(unsort(vec![None, Some(*element)]))
+                    }
 
-                    [changeable, Node::Change] if changeable.can_change() =>
-                        // Change nodes
-                        PartialResult::Success(unsort(vec![changeable.change(), None])),
+                    [changeable, Node::Change] if changeable.change().is_some() =>
+                    // Change nodes
+                    {
+                        PartialResult::Success(unsort(vec![changeable.change(), None]))
+                    }
                     _ => PartialResult::Failure,
                 }
             }

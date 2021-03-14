@@ -177,25 +177,21 @@ impl Board {
             Node::Metal,
             Node::Water,
         ] {
-            for _ in 0..6 {
+            for _ in 0..7 {
                 game.push(element);
             }
         }
 
         for &node in &[Node::Heavenly, Node::Earthly, Node::Human] {
-            for _ in 0..5 {
+            for _ in 0..4 {
                 game.push(node);
             }
-        }
-
-        for _ in 0..4 {
-            game.push(Node::Change);
         }
 
         game.push(Node::Yin);
         game.push(Node::Yang);
 
-        for _ in 0..3 {
+        for _ in 0..5 {
             game.push(Node::Qi);
         }
 
