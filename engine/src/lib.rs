@@ -47,19 +47,33 @@ impl Board {
         out.nodes.insert(Coordinate::new(0, 0), Some(Node::Qi));
 
         let mut try_insert = |coord, node, req_neighbor| {
-            if matches!(out.nodes.get(&coord), Some(Some(_)) | None)
+            let failure = matches!(out.nodes.get(&coord), Some(Some(_)) | None)
                 || (req_neighbor
-                    && coord
+                    && !coord
                         .neighbors()
                         .iter()
-                        .filter(|c| matches!(out.nodes.get(c), Some(Some(_))))
-                        .count()
-                        == 0)
-            {
+                        .any(|c| matches!(out.nodes.get(c), Some(Some(_)))))
+                || (node == Some(Node::Qi)
+                    && Direction::all().iter().any(|&dir| {
+                        let neighbor_elementalnt = match out.nodes.get(&(coord + dir)) {
+                            Some(Some(Node::Qi)) => return true,
+                            Some(Some(n)) => !n.is_elemental(),
+                            _ => true,
+                        };
+                        neighbor_elementalnt
+                            && matches!(out.nodes.get(&(coord + dir + dir)), Some(Some(Node::Qi)))
+                    }))
+                || Direction::all().iter().take(3).any(|&dir| {
+                    matches!(out.nodes.get(&(coord + dir)), Some(Some(Node::Qi)))
+                        && matches!(out.nodes.get(&(coord - dir)), Some(Some(Node::Qi)))
+                });
+            if failure {
                 // Fail if:
                 // - there's something here
                 // - it's out of bounds
-                // - there are no neighbors
+                // - there are no neighbors and we want some
+                // - this is qi and we have a neighbor qi, or this is qi and we sandwich a non-elemental node
+                // - i am sandwiched by qi
                 false
             } else {
                 out.nodes.insert(coord, node);
@@ -71,10 +85,10 @@ impl Board {
         'outer: for radius in 1..=Board::RADIUS {
             let prob = if radius == 1 {
                 1.0
-            } else if radius % 4 <= 1 {
+            } else if radius % 2 == 1 {
                 0.8
             } else {
-                0.2
+                0.0
             };
             let mut ring = Coordinate::new(0i32, 0)
                 .ring_iter(radius, Spin::CW(Direction::XZ))
@@ -91,8 +105,9 @@ impl Board {
                 };
                 if fastrand::f32() <= prob {
                     if let Some(node) = bank.pop() {
-                        let neighbor_req = radius as f32 / Board::RADIUS as f32;
-                        let success = try_insert(coord, Some(node), fastrand::f32() < neighbor_req);
+                        let neighbor_req = 0.99 - radius as f32 / ((Board::RADIUS - 1) as f32);
+                        let success =
+                            try_insert(coord, Some(node), fastrand::f32() <= neighbor_req);
                         if !success {
                             // undo it
                             bank.push(node);
@@ -179,6 +194,10 @@ impl Board {
 
         game.push(Node::Yin);
         game.push(Node::Yang);
+
+        for _ in 0..3 {
+            game.push(Node::Qi);
+        }
 
         game
     }

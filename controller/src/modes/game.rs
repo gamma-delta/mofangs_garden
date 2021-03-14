@@ -86,10 +86,7 @@ impl ModeGame {
                         self.selected_slots.clear();
                         self.update_node_count();
 
-                        if self.node_count.iter().all(|(node, &count)| match node {
-                            Node::Qi => count == 1,
-                            _ => count == 0,
-                        }) {
+                        if self.node_count.iter().all(|(_node, &count)| count == 0) {
                             // poggers
                             self.won = true;
                         }
@@ -231,7 +228,7 @@ impl ModeGame {
             if let Some(selected) = selected {
                 selected == Node::Human
                     && node.is_elemental()
-                    && self.max_open_neighbors(*selected_coord) >= 2
+                    && self.max_open_neighbors(coord) >= 2
             } else {
                 false
             }

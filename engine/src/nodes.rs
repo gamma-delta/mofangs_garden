@@ -54,12 +54,6 @@ impl Node {
 
     /// Does this cancel as a pair with other?
     fn cancels_with(self, other: Node) -> bool {
-        // Human cancels *all* elementals
-        if self == Node::Human && other.is_elemental()
-            || other == Node::Human && self.is_elemental()
-        {
-            return true;
-        }
         // One-to-one cancellations
         let expect = match self {
             Node::Fire => Some(Node::Metal),
@@ -67,11 +61,6 @@ impl Node {
             Node::Wood => Some(Node::Earth),
             Node::Earth => Some(Node::Water),
             Node::Water => Some(Node::Fire),
-
-            Node::Heavenly => Some(Node::Yang),
-            Node::Earthly => Some(Node::Yin),
-            Node::Yang => Some(Node::Heavenly),
-            Node::Yin => Some(Node::Earthly),
 
             Node::Qi => Some(Node::Qi),
             Node::Change => Some(Node::Change),
@@ -131,8 +120,15 @@ impl Node {
             } else if sorted.len() == 2 && sorted[0].is_elemental() && sorted[1] == Node::Qi {
                 // Qi matches with elements and turns the other into qi
                 PartialResult::Success(unsort(vec![Some(Node::Qi), None]))
+            } else if sorted == [Node::Heavenly, Node::Yang] {
+                PartialResult::Success(unsort(vec![Some(Node::Yang), None]))
+            } else if sorted == [Node::Earthly, Node::Yin] {
+                PartialResult::Success(unsort(vec![Some(Node::Yin), None]))
+            } else if sorted.len() == 2 && sorted[0].is_elemental() && sorted[1] == Node::Human {
+                PartialResult::Success(unsort(vec![None, Some(sorted[0])]))
             } else if sorted.len() == 2 && sorted[1] == Node::Change && sorted[0].change().is_some()
             {
+                // Change nodes
                 PartialResult::Success(unsort(vec![sorted[0].change(), None]))
             } else {
                 PartialResult::Failure
