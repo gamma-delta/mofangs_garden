@@ -91,6 +91,11 @@ impl Node {
         }
     }
 
+    /// Can a Change node change this?
+    pub fn can_change(self) -> bool {
+        self.change().is_some()
+    }
+
     /// Given a list of Nodes, see whether this pattern could exist
     /// and, if so, what to replace each Node with.
     pub fn select(nodes: &[Node]) -> PartialResult<Vec<Option<Node>>> {
