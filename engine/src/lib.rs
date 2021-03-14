@@ -47,33 +47,33 @@ impl Board {
         out.nodes.insert(Coordinate::new(0, 0), Some(Node::Qi));
 
         let mut try_insert = |coord, node, req_neighbor| {
-            let failure = matches!(out.nodes.get(&coord), Some(Some(_)) | None)
+            // Fail if:
+            // - there's something here
+            // - it's out of bounds
+            let failure = !out.in_bounds(coord) || out.get_node(coord).is_some()
+                // - there are no neighbors and we want some
                 || (req_neighbor
                     && !coord
                         .neighbors()
                         .iter()
-                        .any(|c| matches!(out.nodes.get(c), Some(Some(_)))))
+                        .any(|&c| out.get_node(c).is_some()))
+                // - this is qi and we have a neighbor qi, or this is qi and we sandwich a non-elemental node
                 || (node == Some(Node::Qi)
                     && Direction::all().iter().any(|&dir| {
-                        let neighbor_elementalnt = match out.nodes.get(&(coord + dir)) {
-                            Some(Some(Node::Qi)) => return true,
-                            Some(Some(n)) => !n.is_elemental(),
-                            _ => true,
+                        let neighbor_elemental = match out.get_node(coord + dir) {
+                            Some(Node::Qi) => return true,
+                            Some(n) => n.is_elemental(),
+                            _ => false,
                         };
-                        neighbor_elementalnt
-                            && matches!(out.nodes.get(&(coord + dir + dir)), Some(Some(Node::Qi)))
+                        !neighbor_elemental
+                            && matches!(out.get_node(coord + dir + dir), Some(Node::Qi))
                     }))
+                // - i am sandwiched by qi
                 || Direction::all().iter().take(3).any(|&dir| {
-                    matches!(out.nodes.get(&(coord + dir)), Some(Some(Node::Qi)))
-                        && matches!(out.nodes.get(&(coord - dir)), Some(Some(Node::Qi)))
+                    matches!(out.get_node(coord + dir), Some(Node::Qi))
+                        && matches!(out.get_node(coord - dir), Some(Node::Qi))
                 });
             if failure {
-                // Fail if:
-                // - there's something here
-                // - it's out of bounds
-                // - there are no neighbors and we want some
-                // - this is qi and we have a neighbor qi, or this is qi and we sandwich a non-elemental node
-                // - i am sandwiched by qi
                 false
             } else {
                 out.nodes.insert(coord, node);
