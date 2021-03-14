@@ -144,26 +144,23 @@ impl Board {
         out
     }
 
-    /// Get the node at the given coordinate.
-    ///
-    /// Panics if the coordinate is out of bounds.
+    /// Get the node at the given coordinate, or `None` if it's out of bounds or doesn't exist.
     pub fn get_node(&self, coord: Coordinate) -> Option<Node> {
-        *self.nodes.get(&coord).unwrap()
+        self.nodes.get(&coord).copied().flatten()
     }
-    /// Get the node at the given coordinate, or `None` if it's out of bounds.
-    pub fn try_get_node(&self, coord: Coordinate) -> Option<Option<Node>> {
-        self.nodes.get(&coord).copied()
+    /// Check whether the given coordinate is on the grid.
+    pub fn in_bounds(&self, coord: Coordinate) -> bool {
+        self.nodes.get(&coord).is_some()
     }
     /// Set the node at the given spot. Return Some with the old value if something was clobbered.
     pub fn set_node(&mut self, coord: Coordinate, node: Option<Node>) -> Option<Node> {
-        // we unwrap because we have to be clobbering *something*.
-        self.nodes.insert(coord, node).unwrap()
+        self.nodes.insert(coord, node).flatten()
     }
     /// Iterator through all slots on the board in no particular order.
     pub fn nodes_iter(&self) -> impl Iterator<Item = (Coordinate, Option<Node>)> + '_ {
         Coordinate::new(0, 0)
             .range_iter(Board::RADIUS)
-            .map(move |c| (c, *self.nodes.get(&c).unwrap()))
+            .map(move |c| (c, self.get_node(c)))
     }
 
     /// Return the standard game sans 1 qi to go in the center
