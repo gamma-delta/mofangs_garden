@@ -162,13 +162,13 @@ impl Board {
             Node::Metal,
             Node::Water,
         ] {
-            for _ in 0..5 {
+            for _ in 0..6 {
                 game.push(element);
             }
         }
 
         for &node in &[Node::Heavenly, Node::Earthly, Node::Human] {
-            for _ in 0..4 {
+            for _ in 0..5 {
                 game.push(node);
             }
         }

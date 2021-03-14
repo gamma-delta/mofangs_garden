@@ -226,10 +226,12 @@ impl ModeGame {
             None => return false,
         };
 
-        let elemental_override = if let [selected] = self.selected_slots.as_slice() {
-            let selected = self.board.get_node(*selected);
+        let elemental_override = if let [selected_coord] = self.selected_slots.as_slice() {
+            let selected = self.board.get_node(*selected_coord);
             if let Some(selected) = selected {
-                selected == Node::Human && node.is_elemental()
+                selected == Node::Human
+                    && node.is_elemental()
+                    && self.max_open_neighbors(*selected_coord) >= 2
             } else {
                 false
             }
