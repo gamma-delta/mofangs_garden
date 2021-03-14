@@ -11,7 +11,7 @@ use macroquad::{
         Skin, Style,
     },
 };
-use mofang_engine::{Board, Node};
+use mofang_engine::{Board, Node, PartialResult};
 
 use crate::{
     drawutils, Globals, Mode, Transition, HEX_HEIGHT, HEX_SIZE, HEX_WIDTH, NODE_RADIUS,
@@ -89,7 +89,7 @@ impl ModeGame {
                         .iter()
                         .map(|&c| self.board.get_node(c).unwrap())
                         .collect::<Vec<_>>();
-                    if let Ok(Some(change)) = Node::select(&combo) {
+                    if let PartialResult::Success(change) = Node::select(&combo) {
                         // nice!
                         for (update, &slot) in change.into_iter().zip(self.selected_slots.iter()) {
                             self.board.set_node(slot, update);
@@ -261,7 +261,7 @@ impl ModeGame {
                     .map(|c| self.board.get_node(*c).unwrap())
                     .chain(iter::once(node))
                     .collect::<Vec<_>>();
-                Node::select(&potential_select).is_ok()
+                Node::select(&potential_select).is_valid()
             }
         }
     }
