@@ -1,11 +1,11 @@
 pub mod nodes;
-pub use nodes::Node;
+pub use nodes::{Node, PartialResult};
 
 use itertools::Itertools;
 
 use hex2d::{Coordinate, Direction, Spin};
 
-use std::{collections::HashMap, convert::TryInto, iter};
+use std::collections::HashMap;
 
 /// The hexagonal board the game is played on.
 ///

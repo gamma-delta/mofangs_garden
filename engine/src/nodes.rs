@@ -22,6 +22,20 @@ pub enum Node {
     Qi,
 }
 
+/// Represents a success, failure, or needs-more-info.
+pub enum PartialResult<T> {
+    Success(T),
+    Continue,
+    Failure
+}
+
+impl<T> PartialResult<T> {
+    /// Is this a success or a needs-more-info?
+    pub fn is_valid(self) -> bool {
+        return !matches!(self, PartialResult::Failure);
+    }
+}
+
 impl Node {
     pub fn is_elemental(self) -> bool {
         matches!(
@@ -82,21 +96,17 @@ impl Node {
         }
     }
 
-    /// Given a list of Nodes, see whether this pattern could exist and what the outcome is.
-    ///
-    /// - Return `Err` if this is impossible.
-    /// - Return Ok(None) if this is possible but not a complete pattern.
-    /// - Return Ok(Some) with each node mapped to its result if it is complete.
-    pub fn select(nodes: &[Node]) -> Result<Option<Vec<Option<Node>>>, ()> {
-        if nodes.is_empty() {
-            // HOW
+    /// Given a list of Nodes, see whether this pattern could exist
+    /// and, if so, what to replace each Node with.
+    pub fn select(nodes: &[Node]) -> PartialResult<Vec<Option<Node>>> {
+        if nodes.len() == 0 {
             unreachable!("You can't select 0 nodes!")
-        } else if nodes.len() == 1 {
-            return Ok(None);
+        }
+        if nodes.len() == 1 {
+            PartialResult::Continue
         } else if nodes.len() == 2 && nodes[0].cancels_with(nodes[1]) {
-            return Ok(Some(vec![None, None]));
+            PartialResult::Success(vec![None, None])
         } else {
-            // Sort this top-to-bottom
             let (original_idxes, sorted): (Vec<_>, Vec<_>) = nodes
                 .iter()
                 .cloned()
@@ -108,27 +118,23 @@ impl Node {
 
             if sorted == [Node::Yin, Node::Yang] {
                 // Yin and Yang become change
-                return Ok(Some(unsort(vec![Some(Node::Change), Some(Node::Change)])));
+                PartialResult::Success(vec![Some(Node::Change), Some(Node::Change)])
             } else if sorted == [Node::Heavenly, Node::Earthly]
                 || sorted == [Node::Heavenly, Node::Human]
                 || sorted == [Node::Earthly, Node::Human]
             {
                 // 2 of the cycle can be selected but don't do anything
-                return Ok(None);
+                PartialResult::Continue
             } else if sorted == [Node::Heavenly, Node::Earthly, Node::Human] {
-                // all 3 of the cycle cancel
-                return Ok(Some(vec![None, None, None]));
+                PartialResult::Success(vec![None, None, None])
             } else if sorted.len() == 2 && sorted[0].is_elemental() && sorted[1] == Node::Qi {
                 // Qi matches with elements and turns the other into qi
-                return Ok(Some(unsort(vec![Some(Node::Qi), None])));
-            } else if sorted.len() == 2 && sorted[1] == Node::Change {
-                // Change combines with lots of things
-                if let Some(res) = sorted[0].change() {
-                    return Ok(Some(unsort(vec![Some(res), None])));
-                }
+                PartialResult::Success(unsort(vec![Some(Node::Qi), None]))
+            } else if sorted.len() == 2 && sorted[1] == Node::Change && sorted[0].change().is_some() {
+                PartialResult::Success(unsort(vec![sorted[0].change(), None]))
+            } else {
+                PartialResult::Failure
             }
         }
-
-        Err(())
     }
 }
