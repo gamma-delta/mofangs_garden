@@ -213,17 +213,13 @@ impl ModeGame {
         match at.neighbors().iter().position(|&coord| self.board.try_get_node(coord).flatten().is_some()) {
             Some(pos) => {
                 // At least one neighbor exists, iter around it
-                let mut max_run = 0;
-                let mut run = 0;
-                for &n_coord in at.neighbors().iter().cycle().skip(pos + 1).take(6) {
-                    if self.board.try_get_node(n_coord).flatten().is_some() {
-                        max_run = max_run.max(run);
-                        run = 0;
+                at.neighbors().iter().cycle().skip(pos + 1).take(6).fold((0, 0), |(maxrun, run), &neighbor| {
+                    if self.board.try_get_node(neighbor).flatten().is_some() {
+                        (maxrun.max(run), 0)
                     } else {
-                        run += 1;
+                        (maxrun, run + 1)
                     }
-                }
-                max_run
+                }).0
             },
             // Everything is empty and fine
             None => 6
