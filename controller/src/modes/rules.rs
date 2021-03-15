@@ -52,7 +52,7 @@ Fortunately, spaces off the board count as empty.
             globals,
             canvas.texture.width() / 2.0,
             canvas.texture.height() / 2.0,
-            |_x, _y, _n| {}
+            |_x, _y, _a, _n| {},
         );
         set_default_camera();
         draw_texture_ex(

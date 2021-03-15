@@ -1,5 +1,3 @@
-use std::{f32::consts::TAU, iter};
-
 use enum_map::EnumMap;
 use hex2d::{Coordinate, Spacing};
 use macroquad::prelude::*;
@@ -109,14 +107,15 @@ impl ModeGame {
         let pent_y = HEX_WIDTH * 2.5;
         let mouse_pos = mouse_position();
         let mut hovered_node = None;
-        drawutils::pentagram(globals, pent_x, pent_y, |x, y, node| {
+        drawutils::pentagram(globals, pent_x, pent_y, |x, y, angle, node| {
             let (dx, dy) = (mouse_pos.0 - x, mouse_pos.1 - y);
             if dx * dx + dy * dy < NODE_RADIUS * NODE_RADIUS {
                 hovered_node = Some(node);
             }
 
             let count = self.node_count[node];
-            let (x, y) = (x + 0.7 * NODE_RADIUS, y - 0.7 * NODE_RADIUS);
+            let (dy, dx) = angle.sin_cos();
+            let (x, y) = (x + dx * NODE_RADIUS, y - dy * NODE_RADIUS);
             draw_circle(x, y, NODE_RADIUS * 0.3, WHITE);
             draw_circle_lines(x, y, NODE_RADIUS * 0.3, 1.2, BLACK);
             drawutils::center_text(globals, count.to_string().as_str(), 14, x, y);
@@ -224,7 +223,10 @@ impl ModeGame {
             // Human magic
             [human_coord]
                 if matches!(self.board.get_node(*human_coord), Some(Node::Human))
-                    && node.is_elemental() => 2,
+                    && node.is_elemental() =>
+            {
+                2
+            }
             _ => node.freeness_req(),
         };
         if self.max_open_neighbors(coord) < freeness_req {
@@ -236,7 +238,7 @@ impl ModeGame {
                 .selected_slots
                 .iter()
                 .flat_map(|c| self.board.get_node(*c))
-                .chain(iter::once(node))
+                .chain(Some(node))
                 .collect::<Vec<_>>();
             Node::select(&potential_select).is_valid()
         }
