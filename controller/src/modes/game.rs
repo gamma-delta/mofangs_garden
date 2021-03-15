@@ -220,44 +220,32 @@ impl ModeGame {
             None => return false,
         };
 
-        let elemental_override = if let [selected_coord] = self.selected_slots.as_slice() {
-            let selected = self.board.get_node(*selected_coord);
-            if let Some(selected) = selected {
-                selected == Node::Human
-                    && node.is_elemental()
-                    && self.max_open_neighbors(coord) >= 2
-            } else {
-                false
-            }
-        } else {
-            false
+        let freeness_req = match self.selected_slots.as_slice() {
+            // Human magic
+            [human_coord]
+                if matches!(self.board.get_node(*human_coord), Some(Node::Human))
+                    && node.is_elemental() => 2,
+            _ => node.freeness_req(),
         };
-        if elemental_override {
-            true
+        if self.max_open_neighbors(coord) < freeness_req {
+            // we didn't make it
+            false
         } else {
-            let freeness_req = node.freeness_req();
-            if self.max_open_neighbors(coord) < freeness_req {
-                // we didn't make it
-                false
-            } else {
-                // check to see if this is an allowed combo
-                let potential_select = self
-                    .selected_slots
-                    .iter()
-                    .flat_map(|c| self.board.get_node(*c))
-                    .chain(iter::once(node))
-                    .collect::<Vec<_>>();
-                Node::select(&potential_select).is_valid()
-            }
+            // check to see if this is an allowed combo
+            let potential_select = self
+                .selected_slots
+                .iter()
+                .flat_map(|c| self.board.get_node(*c))
+                .chain(iter::once(node))
+                .collect::<Vec<_>>();
+            Node::select(&potential_select).is_valid()
         }
     }
 
     fn update_node_count(&mut self) {
         self.node_count.clear();
-        for (_, node) in self.board.nodes_iter() {
-            if let Some(node) = node {
-                self.node_count[node] += 1;
-            }
+        for node in self.board.nodes_iter().flat_map(|(_, node)| node) {
+            self.node_count[node] += 1;
         }
     }
 }

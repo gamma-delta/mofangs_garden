@@ -37,8 +37,21 @@ impl<T> PartialResult<T> {
     }
 }
 
+fn all_unique<I, E>(mut iter: I) -> bool
+where
+    I: Iterator<Item = E>,
+    E: PartialEq,
+{
+    iter.next()
+        .map(|val| {
+            iter.try_fold(val, |acc, next| if acc == next { None } else { Some(next) })
+                .is_some()
+        })
+        .unwrap_or(true)
+}
+
 impl Node {
-    pub fn is_elemental(self) -> bool {
+    pub fn is_elemental(&self) -> bool {
         matches!(
             self,
             Node::Wood | Node::Fire | Node::Earth | Node::Metal | Node::Water
@@ -46,7 +59,7 @@ impl Node {
     }
 
     /// What's the number of contiguous open nodes required to be selectable?
-    pub fn freeness_req(self) -> usize {
+    pub fn freeness_req(&self) -> usize {
         match self {
             Node::Qi => 5,
             _ => 3,
@@ -54,7 +67,7 @@ impl Node {
     }
 
     /// Does this cancel as a pair with other?
-    fn cancels_with(self, other: Node) -> bool {
+    fn cancels_with(&self, other: Node) -> bool {
         // One-to-one cancellations
         let expect = match self {
             Node::Fire => Some(Node::Metal),
@@ -76,7 +89,7 @@ impl Node {
     }
 
     /// What does Change turn this into, if any?
-    pub fn change(self) -> Option<Node> {
+    pub fn change(&self) -> Option<Node> {
         match self {
             Node::Wood => Some(Node::Fire),
             Node::Fire => Some(Node::Earth),
@@ -93,7 +106,7 @@ impl Node {
     }
 
     /// Can a Change node change this?
-    pub fn can_change(self) -> bool {
+    pub fn can_change(&self) -> bool {
         self.change().is_some()
     }
 
@@ -114,42 +127,19 @@ impl Node {
                 let unsort =
                     |v: Vec<Option<Node>>| original_idxes.iter().map(|&idx| v[idx]).collect_vec();
 
-                // Check for destruction + 5 elements
-                // Alwinfy there has to be a non-jank way to do this save me
-                if sorted.last() == Some(&Node::Destruction) {
-                    let element_mask =
-                        sorted[0..sorted.len() - 1]
-                            .iter()
-                            .fold(Some(0b00000), |acc, &node| {
-                                // yes this is super jank, but it *works*
-                                match acc {
-                                    Some(acc) if node.is_elemental() => {
-                                        let this_bit = 1 << node as u8;
-                                        if (acc & this_bit) != 0 {
-                                            // we know this node
-                                            None
-                                        } else {
-                                            // Nice this is new to us
-                                            Some(acc | this_bit)
-                                        }
-                                    }
-                                    _ => None,
-                                }
-                            });
-                    if let Some(mask) = element_mask {
-                        if mask == 0b11111 {
+                match sorted.as_slice() {
+                    // Destruction requires some Special Handling
+                    [rest @ .., Node::Destruction]
+                        if rest.iter().all(Node::is_elemental) && all_unique(rest.iter()) =>
+                    {
+                        if rest.len() == 5 {
                             // we caught them all
-                            return PartialResult::Success(vec![None; 6]);
+                            PartialResult::Success(vec![None; 6])
                         } else {
                             // we're still working on it
-                            return PartialResult::Continue;
+                            PartialResult::Continue
                         }
-                    } else {
-                        return PartialResult::Failure;
                     }
-                }
-
-                match sorted.as_slice() {
                     // Yin and Yang become change
                     [Node::Yin, Node::Yang] => {
                         PartialResult::Success(vec![Some(Node::Creation), Some(Node::Creation)])
