@@ -28,35 +28,44 @@ pub fn node(globals: &Globals, node: Node, cx: f32, cy: f32, faded: bool) {
         gl_use_material(globals.assets.fade_shader);
     }
 
-    draw_texture(tex, cx - NODE_RADIUS, cy - NODE_RADIUS, WHITE);
+    draw_texture(tex, (cx - NODE_RADIUS).round(), (cy - NODE_RADIUS).round(), WHITE);
 
     if faded {
         gl_use_default_material();
     }
 }
 
+pub enum TextAlign {
+    Left, Center, Right
+}
+
 /// Draw the text with the given size at the given position.
-pub fn text(globals: &Globals, text: &str, size: u16, cx: f32, cy: f32) {
+pub fn text(globals: &Globals, text: &str, size: u16, cx: f32, cy: f32, align: TextAlign) {
+    let params = TextParams {
+        font_size: size,
+        font: globals.assets.font,
+        color: BLACK,
+        ..Default::default()
+    };
     for (idx, line) in text.lines().enumerate() {
+        let offset = match align {
+            TextAlign::Left => 0.0, 
+            TextAlign::Center => 0.5,
+            TextAlign::Right => 1.0
+        };
+        let width = measure_text(line, Some(globals.assets.font), size, 1.).width;
         draw_text_ex(
             line,
-            cx,
-            cy + size as f32 * idx as f32 * 1.1,
-            TextParams {
-                font_size: size,
-                font: globals.assets.font,
-                color: BLACK,
-                ..Default::default()
-            },
+            cx - offset * width,
+            cy + size as f32 * idx as f32,
+            params
         );
     }
 }
 
 pub fn center_text(globals: &Globals, text: &str, size: u16, cx: f32, cy: f32) {
-    // Estimate center
-    let center_x = cx - text.len() as f32 / 2.0 * size as f32 * 0.5;
-    let center_y = cy + size as f32 * 0.5;
-    self::text(globals, text, size, center_x, center_y);
+    let center_y = cy - size as f32 * (text.lines().count() as f32 - 5./3.) * 0.5;
+    self::text(globals, text, size, cx, center_y, TextAlign::Center);
 }
 
 // shut up
@@ -96,15 +105,15 @@ pub fn arrow(
     draw_triangle(point_end, point_top, point_bottom, color);
 }
 
-pub fn node_arrow(from: (f32, f32), to: (f32, f32), padding: f32, color: Color) {
+pub fn node_arrow(from: (f32, f32), to: (f32, f32), padding: f32, skew_angle: f32, color: Color) {
     let arrow_pad = (1. + padding) * NODE_RADIUS;
     let (dx, dy) = (to.0 - from.0, to.1 - from.1);
     let angle = dy.atan2(dx);
     // length is distance between centers minus twice the padding
-    let len = (dx * dx + dy * dy).sqrt() - 2. * arrow_pad;
+    let len = (dx * dx + dy * dy).sqrt() - 2. * arrow_pad * skew_angle.cos();
     arrow(
-        from.0 + arrow_pad * angle.cos(),
-        from.1 + arrow_pad * angle.sin(),
+        from.0 + arrow_pad * (skew_angle + angle).cos(),
+        from.1 + arrow_pad * (skew_angle + angle).sin(),
         angle,
         len,
         2.0,
@@ -114,13 +123,21 @@ pub fn node_arrow(from: (f32, f32), to: (f32, f32), padding: f32, color: Color) 
     );
 }
 
-pub fn pentagram(globals: &Globals, pent_x: f32, pent_y: f32) {
-    let node_pos = (0..5)
-        .map(|idx| {
-            let (dx, dy) = (idx as f32 * 0.2 * TAU).sin_cos();
-            (pent_x + HEX_HEIGHT * dx, pent_y - HEX_HEIGHT * dy)
-        })
-        .collect::<Vec<_>>();
+pub fn draw_centered(tex: Texture2D, (x, y): (f32, f32)) {
+    // we take the floor to align pixels perfectly
+    draw_texture(tex, (x - tex.width() * 0.5).floor(), (y - tex.height() * 0.5).floor(), WHITE);
+}
+
+pub fn pentagram<C>(globals: &Globals, pent_x: f32, pent_y: f32, continuation: C) where C: Fn(f32, f32, Node) -> () {
+    let offset = |angle: f32, rad| {
+        let (dx, dy) = (angle * TAU).sin_cos();
+        (pent_x + rad * dx, pent_y - rad * dy)
+    };
+    let node_pos = (0..5).map(|idx| offset(idx as f32 * 0.2, HEX_HEIGHT * 1.2)).collect::<Vec<_>>();
+    self::node(globals, Node::Destruction, pent_x, pent_y, false);
+    continuation(pent_x, pent_y, Node::Destruction);
+    draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.24, 0., 1.2, GRAY);
+    draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.3,  0., 1.2, GRAY);
     for (idx, &node) in [
         Node::Wood,
         Node::Fire,
@@ -133,8 +150,10 @@ pub fn pentagram(globals: &Globals, pent_x: f32, pent_y: f32) {
     {
         let pos = node_pos[idx];
         self::node(globals, node, pos.0, pos.1, false);
+        continuation(pos.0, pos.1, node);
+        draw_centered(globals.assets.textures.create_base, offset(idx as f32 * 0.2 + 0.5, HEX_HEIGHT * 0.95));
 
-        self::node_arrow(pos, node_pos[(idx + 1) % 5], 0.2, GRAY);
-        self::node_arrow(pos, node_pos[(idx + 2) % 5], 0.1, BLACK);
+        self::node_arrow(pos, node_pos[(idx + 1) % 5], 0.25, -0.3, GRAY);
+        self::node_arrow(pos, node_pos[(idx + 2) % 5], 0.1, -0.25, BLACK);
     }
 }

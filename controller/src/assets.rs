@@ -43,6 +43,9 @@ pub struct Textures {
     pub select: Texture2D,
 
     pub hex: Texture2D,
+
+    pub create_base: Texture2D,
+    pub destroy_base: Texture2D,
 }
 
 impl Textures {
@@ -65,6 +68,8 @@ impl Textures {
             highlight: texture("highlight").await,
             select: texture("select").await,
             hex: texture("hex").await,
+            create_base: texture("create_base").await,
+            destroy_base: texture("destroy_base").await,
         }
     }
 }

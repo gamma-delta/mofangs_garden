@@ -34,6 +34,7 @@ Fortunately, spaces off the board count as empty.
             text_size_p,
             HEX_WIDTH / 2.0,
             HEX_HEIGHT,
+            drawutils::TextAlign::Left,
         );
 
         // Draw pentagram
@@ -51,6 +52,7 @@ Fortunately, spaces off the board count as empty.
             globals,
             canvas.texture.width() / 2.0,
             canvas.texture.height() / 2.0,
+            |_x, _y, _n| {}
         );
         set_default_camera();
         draw_texture_ex(
@@ -74,6 +76,7 @@ the next element in the cycle (gray lines).",
             text_size_p,
             HEX_WIDTH * 2.6,
             HEX_HEIGHT * 2.4,
+            drawutils::TextAlign::Left,
         );
     }
 }

@@ -149,31 +149,14 @@ impl ModeGame {
         let ui_center_x = screen_width() - HEX_WIDTH * 2.3;
 
         let pent_x = ui_center_x;
-        let pent_y = HEX_WIDTH * 2.0;
-        drawutils::pentagram(globals, pent_x, pent_y);
-        // Draw elements left
-        for (idx, &node) in [
-            Node::Wood,
-            Node::Fire,
-            Node::Earth,
-            Node::Metal,
-            Node::Water,
-        ]
-        .iter()
-        .enumerate()
-        {
-            let wrap = idx as f32 / 5.0;
-            let angle = wrap * TAU;
-            let theta = angle - TAU / 4.0;
-
-            let (dy, dx) = theta.sin_cos();
-            let radius = HEX_HEIGHT * 1.5;
-            let x = dx * radius + pent_x;
-            let y = dy * radius + pent_y - 1.0;
-
+        let pent_y = HEX_WIDTH * 2.5;
+        drawutils::pentagram(globals, pent_x, pent_y, |x, y, node| {
             let count = self.node_count[node];
+            let (x, y) = (x + 0.7 * NODE_RADIUS, y - 0.7 * NODE_RADIUS);
+            draw_circle(x, y, NODE_RADIUS * 0.3, WHITE);
+            draw_circle_lines(x, y, NODE_RADIUS * 0.3, 1.2, BLACK);
             drawutils::center_text(globals, count.to_string().as_str(), 14, x, y);
-        }
+        });
 
         let new_game_button = new_game_button();
         draw_rectangle_lines(
