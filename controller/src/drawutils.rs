@@ -95,7 +95,29 @@ pub fn arrow(
     draw_triangle(point_end, point_top, point_bottom, color);
 }
 
+pub fn node_arrow(from: (f32, f32), to: (f32, f32), padding: f32, color: Color) {
+    let arrow_pad = (1. + padding) * NODE_RADIUS;
+    let (dx, dy) = (to.0 - from.0, to.1 - from.1);
+    let angle = dy.atan2(dx);
+    // length is distance between centers minus twice the padding
+    let len = (dx * dx + dy * dy).sqrt() - 2. * arrow_pad;
+    arrow(
+        from.0 + arrow_pad * angle.cos(),
+        from.1 + arrow_pad * angle.sin(),
+        angle,
+        len,
+        2.0,
+        NODE_RADIUS * 0.2,
+        NODE_RADIUS * 0.2,
+        color,
+    );
+}
+
 pub fn pentagram(globals: &Globals, pent_x: f32, pent_y: f32) {
+    let node_pos = (0..5).map(|idx| {
+        let (dx, dy) = (idx as f32 * 0.2 * TAU).sin_cos();
+        (pent_x + HEX_HEIGHT * dx, pent_y - HEX_HEIGHT * dy)
+    }).collect::<Vec<_>>();
     for (idx, &node) in [
         Node::Wood,
         Node::Fire,
@@ -106,54 +128,10 @@ pub fn pentagram(globals: &Globals, pent_x: f32, pent_y: f32) {
     .iter()
     .enumerate()
     {
-        let wrap = idx as f32 / 5.0;
-        let angle = wrap * TAU;
-        let theta = angle - TAU / 4.0;
+        let pos = node_pos[idx];
+        self::node(globals, node, pos.0, pos.1, false);
 
-        let (dy, dx) = theta.sin_cos();
-        let radius = HEX_HEIGHT;
-        let x = dx * radius + pent_x;
-        let y = dy * radius + pent_y;
-        self::node(globals, node, x, y, false);
-
-        // Draw the two arrows.
-        let arrow_origin_x = dx * radius * 1.1 + pent_x;
-        let arrow_origin_y = dy * radius * 1.1 + pent_y;
-        let arrow_pad = 1.2;
-
-        let short_angle = 0.1 * TAU + angle;
-        let (dy, dx) = short_angle.sin_cos();
-        let arrow_x = arrow_origin_x + dx * NODE_RADIUS * arrow_pad;
-        let arrow_y = arrow_origin_y + dy * NODE_RADIUS * arrow_pad;
-        let side = 1.176 * radius;
-        let len = side - NODE_RADIUS * arrow_pad * 1.8;
-        arrow(
-            arrow_x,
-            arrow_y,
-            short_angle,
-            len,
-            2.0,
-            NODE_RADIUS * 0.2,
-            NODE_RADIUS * 0.2,
-            GRAY,
-        );
-
-        let long_angle = 0.2 * TAU + angle;
-        let (dy, dx) = long_angle.sin_cos();
-        let arrow_pad = 1.3;
-        let arrow_x = arrow_origin_x + dx * NODE_RADIUS * arrow_pad;
-        let arrow_y = arrow_origin_y + dy * NODE_RADIUS * arrow_pad;
-        let span = 1.618 * radius;
-        let len = span - NODE_RADIUS * arrow_pad * 1.1;
-        arrow(
-            arrow_x,
-            arrow_y,
-            long_angle,
-            len,
-            2.0,
-            NODE_RADIUS * 0.2,
-            NODE_RADIUS * 0.2,
-            BLACK,
-        );
+        self::node_arrow(pos, node_pos[(idx + 1) % 5], 0.2, GRAY);
+        self::node_arrow(pos, node_pos[(idx + 2) % 5], 0.1, BLACK);
     }
 }
