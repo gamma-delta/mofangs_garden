@@ -35,7 +35,8 @@ pub struct Textures {
     pub human: Texture2D,
     pub yin: Texture2D,
     pub yang: Texture2D,
-    pub change: Texture2D,
+    pub creation: Texture2D,
+    pub destruction: Texture2D,
     pub qi: Texture2D,
 
     pub highlight: Texture2D,
@@ -57,7 +58,8 @@ impl Textures {
             human: texture("human").await,
             yin: texture("yin").await,
             yang: texture("yang").await,
-            change: texture("change").await,
+            creation: texture("creation").await,
+            destruction: texture("destruction").await,
             qi: texture("qi").await,
 
             highlight: texture("highlight").await,

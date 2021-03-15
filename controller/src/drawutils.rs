@@ -19,7 +19,8 @@ pub fn node(globals: &Globals, node: Node, cx: f32, cy: f32, faded: bool) {
         Node::Human => globals.assets.textures.human,
         Node::Yin => globals.assets.textures.yin,
         Node::Yang => globals.assets.textures.yang,
-        Node::Change => globals.assets.textures.change,
+        Node::Creation => globals.assets.textures.creation,
+        Node::Destruction => globals.assets.textures.destruction,
         Node::Qi => globals.assets.textures.qi,
     };
 
@@ -114,10 +115,12 @@ pub fn node_arrow(from: (f32, f32), to: (f32, f32), padding: f32, color: Color) 
 }
 
 pub fn pentagram(globals: &Globals, pent_x: f32, pent_y: f32) {
-    let node_pos = (0..5).map(|idx| {
-        let (dx, dy) = (idx as f32 * 0.2 * TAU).sin_cos();
-        (pent_x + HEX_HEIGHT * dx, pent_y - HEX_HEIGHT * dy)
-    }).collect::<Vec<_>>();
+    let node_pos = (0..5)
+        .map(|idx| {
+            let (dx, dy) = (idx as f32 * 0.2 * TAU).sin_cos();
+            (pent_x + HEX_HEIGHT * dx, pent_y - HEX_HEIGHT * dy)
+        })
+        .collect::<Vec<_>>();
     for (idx, &node) in [
         Node::Wood,
         Node::Fire,

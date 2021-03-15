@@ -3,7 +3,7 @@ pub use nodes::{Node, PartialResult};
 
 use itertools::Itertools;
 
-use hex2d::{Coordinate, Direction, Spin};
+use hex2d::{Angle, Coordinate, Direction, Spin};
 
 use std::collections::HashMap;
 
@@ -44,7 +44,8 @@ impl Board {
         fastrand::shuffle(&mut bank);
 
         let mut out = Self::new();
-        out.nodes.insert(Coordinate::new(0, 0), Some(Node::Qi));
+        out.nodes
+            .insert(Coordinate::new(0, 0), Some(Node::Destruction));
 
         let mut try_insert = |coord, node, req_neighbor| {
             // Fail if:
@@ -57,22 +58,19 @@ impl Board {
                         .neighbors()
                         .iter()
                         .any(|&c| out.get_node(c).is_some()))
-                // - this is qi and we have a neighbor qi, or this is qi and we sandwich a non-elemental node
-                || (node == Some(Node::Qi)
-                    && Direction::all().iter().any(|&dir| {
-                        let neighbor_elemental = match out.get_node(coord + dir) {
-                            Some(Node::Qi) => return true,
-                            Some(n) => n.is_elemental(),
-                            _ => false,
-                        };
-                        !neighbor_elemental
-                            && matches!(out.get_node(coord + dir + dir), Some(Node::Qi))
-                    }))
-                // - i am sandwiched by qi
-                || Direction::all().iter().take(3).any(|&dir| {
-                    matches!(out.get_node(coord + dir), Some(Node::Qi))
-                        && matches!(out.get_node(coord - dir), Some(Node::Qi))
-                });
+                    // - this is qi and we have 2 neighbor qi
+                    || (node == Some(Node::Qi)
+                        && Direction::all().iter().filter(|&&dir| {
+                            matches!(out.get_node(coord + dir), Some(Node::Qi))
+                        }).count() >= 2)
+                /*
+                    // - i am sandwiched by qi
+                    || Direction::all().iter().take(3).any(|&dir| {
+                        matches!(out.get_node(coord + dir), Some(Node::Qi))
+                            && matches!(out.get_node(coord - dir), Some(Node::Qi))
+                    })
+                */
+                ;
             if failure {
                 false
             } else {
@@ -81,7 +79,14 @@ impl Board {
             }
         };
 
+        // +1 => right
+        // -1 => left
         let chirality = if fastrand::bool() { 1 } else { -1 };
+        for idx in 0..3 {
+            let pos = Coordinate::new(0, chirality).rotate_around_zero(Angle::from_int(idx * 2));
+            try_insert(pos, Some(Node::Qi), false);
+        }
+
         'outer: for radius in 1..=Board::RADIUS {
             let prob = if radius == 1 {
                 1.0
@@ -90,30 +95,34 @@ impl Board {
             } else {
                 0.0
             };
-            let mut ring = Coordinate::new(0i32, 0)
-                .ring_iter(radius, Spin::CW(Direction::XZ))
-                .collect_vec();
-            fastrand::shuffle(&mut ring);
-            for coord in ring {
-                let prob = if (coord.x == 0 && coord.y.signum() == chirality)
-                    || (coord.y == 0 && coord.z().signum() == chirality)
-                    || (coord.z() == 0 && coord.x.signum() == chirality)
-                {
-                    1.0
-                } else {
-                    prob
-                };
-                if fastrand::f32() <= prob {
-                    if let Some(node) = bank.pop() {
-                        let neighbor_req = 0.99 - radius as f32 / ((Board::RADIUS - 1) as f32);
-                        let success =
-                            try_insert(coord, Some(node), fastrand::f32() <= neighbor_req);
-                        if !success {
-                            // undo it
-                            bank.push(node);
+            // try each ring this many times
+            for _ in 0..3 {
+                let mut ring = Coordinate::new(0i32, 0)
+                    .ring_iter(radius, Spin::CW(Direction::XZ))
+                    .collect_vec();
+                fastrand::shuffle(&mut ring);
+                for coord in ring {
+                    let on_spoke = (coord.x == 0 && coord.y.signum() == chirality)
+                        || (coord.y == 0 && coord.z().signum() == chirality)
+                        || (coord.z() == 0 && coord.x.signum() == chirality);
+
+                    if on_spoke && radius == 0 {
+                        // Just place Qi
+                        try_insert(coord, Some(Node::Qi), false);
+                    }
+                    let prob = if on_spoke { 1.0 } else { prob };
+                    if fastrand::f32() <= prob {
+                        if let Some(node) = bank.pop() {
+                            let neighbor_req = radius as f32 / ((Board::RADIUS - 1) as f32);
+                            let success =
+                                try_insert(coord, Some(node), fastrand::f32() <= neighbor_req);
+                            if !success {
+                                // undo it
+                                bank.push(node);
+                            }
+                        } else {
+                            break 'outer;
                         }
-                    } else {
-                        break 'outer;
                     }
                 }
             }
@@ -163,7 +172,8 @@ impl Board {
             .map(move |c| (c, self.get_node(c)))
     }
 
-    /// Return the standard game sans 1 qi to go in the center
+    /// Return the standard game sans 1 Destruction to go in the center
+    /// and 3 qi to surround it.
     fn standard_game() -> Vec<Node> {
         let mut game = vec![];
 
@@ -188,7 +198,7 @@ impl Board {
         game.push(Node::Yin);
         game.push(Node::Yang);
 
-        for _ in 0..5 {
+        for _ in 0..3 {
             game.push(Node::Qi);
         }
 

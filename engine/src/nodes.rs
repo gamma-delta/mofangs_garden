@@ -17,7 +17,8 @@ pub enum Node {
     Yin,
     Yang,
 
-    Change,
+    Creation,
+    Destruction,
 
     Qi,
 }
@@ -68,7 +69,7 @@ impl Node {
             Node::Yin => Some(Node::Earthly),
 
             Node::Qi => Some(Node::Qi),
-            Node::Change => Some(Node::Change),
+            Node::Creation => Some(Node::Creation),
             _ => None,
         };
         expect.filter(|o| *o == other).is_some()
@@ -113,10 +114,45 @@ impl Node {
                 let unsort =
                     |v: Vec<Option<Node>>| original_idxes.iter().map(|&idx| v[idx]).collect_vec();
 
+                // Check for destruction + 5 elements
+                // Alwinfy there has to be a non-jank way to do this save me
+                if sorted.last() == Some(&Node::Destruction) {
+                    let element_mask =
+                        sorted[0..sorted.len() - 1]
+                            .iter()
+                            .fold(Some(0b00000), |acc, &node| {
+                                // yes this is super jank, but it *works*
+                                match acc {
+                                    Some(acc) if node.is_elemental() => {
+                                        let this_bit = 1 << node as u8;
+                                        if (acc & this_bit) != 0 {
+                                            // we know this node
+                                            None
+                                        } else {
+                                            // Nice this is new to us
+                                            Some(acc | this_bit)
+                                        }
+                                    }
+                                    _ => None,
+                                }
+                            });
+                    if let Some(mask) = element_mask {
+                        if mask == 0b11111 {
+                            // we caught them all
+                            return PartialResult::Success(vec![None; 6]);
+                        } else {
+                            // we're still working on it
+                            return PartialResult::Continue;
+                        }
+                    } else {
+                        return PartialResult::Failure;
+                    }
+                }
+
                 match sorted.as_slice() {
                     // Yin and Yang become change
                     [Node::Yin, Node::Yang] => {
-                        PartialResult::Success(vec![Some(Node::Change), Some(Node::Change)])
+                        PartialResult::Success(vec![Some(Node::Creation), Some(Node::Creation)])
                     }
 
                     // 2 of the cycle can be selected but don't do anything
@@ -128,21 +164,32 @@ impl Node {
                         PartialResult::Success(vec![None, None, None])
                     }
 
-                    // Qi matches with elements and turns the other into qi
+                    // Qi matches with elements
+                    /*
                     [element, Node::Qi] if element.is_elemental() => {
                         PartialResult::Success(unsort(vec![Some(Node::Qi), None]))
                     }
+                    */
 
+                    /*
+                    [Node::Heavenly, Node::Yang] => {
+                        PartialResult::Success(unsort(vec![Some(Node::Yang), None]))
+                    }
+                    [Node::Earthly, Node::Yin] => {
+                        PartialResult::Success(unsort(vec![Some(Node::Yin), None]))
+                    }
+                    */
                     // Human ingenuity can attract any element
                     [element, Node::Human] if element.is_elemental() => {
                         PartialResult::Success(unsort(vec![None, Some(*element)]))
                     }
 
-                    [changeable, Node::Change] if changeable.can_change() =>
+                    [changeable, Node::Creation] if changeable.can_change() =>
                     // Change nodes
                     {
                         PartialResult::Success(unsort(vec![changeable.change(), None]))
                     }
+
                     _ => PartialResult::Failure,
                 }
             }

@@ -65,8 +65,12 @@ impl ModeGame {
                 // hey we're trying to select something!
                 if let Some(idx) = self.selected_slots.iter().position(|c| c == &hovered) {
                     // Oops we know this already
-                    self.selected_slots.remove(idx);
-                } else if self.is_selectable(hovered_coord) {
+                    if idx == self.selected_slots.len() - 1 {
+                        self.selected_slots.pop();
+                    } else {
+                        self.selected_slots.clear();
+                    }
+                } else if self.is_selectable(hovered) {
                     self.selected_slots.push(hovered);
                     // See if we have a WOMBO COMBO
                     let combo = self
@@ -87,6 +91,9 @@ impl ModeGame {
                             self.won = true;
                         }
                     }
+                } else if self.board.get_node(hovered).is_none() {
+                    // Click off a piece to clear your selection
+                    self.selected_slots.clear();
                 }
             }
         }
