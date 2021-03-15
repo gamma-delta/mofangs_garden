@@ -102,6 +102,45 @@ impl ModeGame {
     }
 
     pub fn draw(&self, globals: &Globals) {
+        // Draw counting UI
+        let ui_center_x = screen_width() - HEX_WIDTH * 2.3;
+
+        let pent_x = ui_center_x;
+        let pent_y = HEX_WIDTH * 2.5;
+        let mouse_pos = mouse_position();
+        let mut hovered_node = None;
+        drawutils::pentagram(globals, pent_x, pent_y, |x, y, node| {
+            let (dx, dy) = (mouse_pos.0 - x, mouse_pos.1 - y);
+            if dx * dx + dy * dy < NODE_RADIUS * NODE_RADIUS {
+                hovered_node = Some(node);
+            }
+
+            let count = self.node_count[node];
+            let (x, y) = (x + 0.7 * NODE_RADIUS, y - 0.7 * NODE_RADIUS);
+            draw_circle(x, y, NODE_RADIUS * 0.3, WHITE);
+            draw_circle_lines(x, y, NODE_RADIUS * 0.3, 1.2, BLACK);
+            drawutils::center_text(globals, count.to_string().as_str(), 14, x, y);
+        });
+
+        // Draw new game button
+        let new_game_button = new_game_button();
+        draw_rectangle_lines(
+            new_game_button.x,
+            new_game_button.y,
+            new_game_button.w,
+            new_game_button.h,
+            2.0,
+            BLACK,
+        );
+        drawutils::center_text(
+            globals,
+            "New Game",
+            20,
+            new_game_button.x + new_game_button.w / 2.0,
+            new_game_button.y + new_game_button.h / 2.0,
+        );
+
+        // Draw board
         for hex_coord in Coordinate::new(0, 0).range_iter(Board::RADIUS) {
             let zero_coords = hex_coord.to_pixel(Spacing::PointyTop(HEX_SIZE));
             let coords = (
@@ -116,9 +155,12 @@ impl ModeGame {
             );
 
             let unfaded_node = if let Some(node) = self.board.get_node(hex_coord) {
-                let faded = !self.is_selectable(hex_coord);
-                drawutils::node(globals, node, coords.0, coords.1, faded);
-                !faded
+                let unfaded = match hovered_node {
+                    Some(mnode) => mnode == node,
+                    None => self.is_selectable(hex_coord),
+                };
+                drawutils::node(globals, node, coords.0, coords.1, !unfaded);
+                unfaded
             } else {
                 false
             };
@@ -143,37 +185,6 @@ impl ModeGame {
                 );
             }
         }
-
-        // Draw UI
-        // Macroquad UI sadly isn't powerful enough for me yet :pensive:
-        let ui_center_x = screen_width() - HEX_WIDTH * 2.3;
-
-        let pent_x = ui_center_x;
-        let pent_y = HEX_WIDTH * 2.5;
-        drawutils::pentagram(globals, pent_x, pent_y, |x, y, node| {
-            let count = self.node_count[node];
-            let (x, y) = (x + 0.7 * NODE_RADIUS, y - 0.7 * NODE_RADIUS);
-            draw_circle(x, y, NODE_RADIUS * 0.3, WHITE);
-            draw_circle_lines(x, y, NODE_RADIUS * 0.3, 1.2, BLACK);
-            drawutils::center_text(globals, count.to_string().as_str(), 14, x, y);
-        });
-
-        let new_game_button = new_game_button();
-        draw_rectangle_lines(
-            new_game_button.x,
-            new_game_button.y,
-            new_game_button.w,
-            new_game_button.h,
-            2.0,
-            BLACK,
-        );
-        drawutils::center_text(
-            globals,
-            "New Game",
-            20,
-            new_game_button.x + new_game_button.w / 2.0 - 10.0,
-            new_game_button.y + new_game_button.h / 2.0 - 5.0,
-        );
     }
 
     fn max_open_neighbors(&self, at: Coordinate) -> usize {

@@ -128,7 +128,7 @@ pub fn draw_centered(tex: Texture2D, (x, y): (f32, f32)) {
     draw_texture(tex, (x - tex.width() * 0.5).floor(), (y - tex.height() * 0.5).floor(), WHITE);
 }
 
-pub fn pentagram<C>(globals: &Globals, pent_x: f32, pent_y: f32, continuation: C) where C: Fn(f32, f32, Node) -> () {
+pub fn pentagram<C>(globals: &Globals, pent_x: f32, pent_y: f32, mut continuation: C) where C: FnMut(f32, f32, Node) -> () {
     let offset = |angle: f32, rad| {
         let (dx, dy) = (angle * TAU).sin_cos();
         (pent_x + rad * dx, pent_y - rad * dy)
