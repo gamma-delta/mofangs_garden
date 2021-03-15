@@ -47,33 +47,33 @@ impl Board {
         out.nodes.insert(Coordinate::new(0, 0), Some(Node::Qi));
 
         let mut try_insert = |coord, node, req_neighbor| {
-            let failure = matches!(out.nodes.get(&coord), Some(Some(_)) | None)
+            // Fail if:
+            // - there's something here
+            // - it's out of bounds
+            let failure = !out.in_bounds(coord) || out.get_node(coord).is_some()
+                // - there are no neighbors and we want some
                 || (req_neighbor
                     && !coord
                         .neighbors()
                         .iter()
-                        .any(|c| matches!(out.nodes.get(c), Some(Some(_)))))
+                        .any(|&c| out.get_node(c).is_some()))
+                // - this is qi and we have a neighbor qi, or this is qi and we sandwich a non-elemental node
                 || (node == Some(Node::Qi)
                     && Direction::all().iter().any(|&dir| {
-                        let neighbor_elementalnt = match out.nodes.get(&(coord + dir)) {
-                            Some(Some(Node::Qi)) => return true,
-                            Some(Some(n)) => !n.is_elemental(),
-                            _ => true,
+                        let neighbor_elemental = match out.get_node(coord + dir) {
+                            Some(Node::Qi) => return true,
+                            Some(n) => n.is_elemental(),
+                            _ => false,
                         };
-                        neighbor_elementalnt
-                            && matches!(out.nodes.get(&(coord + dir + dir)), Some(Some(Node::Qi)))
+                        !neighbor_elemental
+                            && matches!(out.get_node(coord + dir + dir), Some(Node::Qi))
                     }))
+                // - i am sandwiched by qi
                 || Direction::all().iter().take(3).any(|&dir| {
-                    matches!(out.nodes.get(&(coord + dir)), Some(Some(Node::Qi)))
-                        && matches!(out.nodes.get(&(coord - dir)), Some(Some(Node::Qi)))
+                    matches!(out.get_node(coord + dir), Some(Node::Qi))
+                        && matches!(out.get_node(coord - dir), Some(Node::Qi))
                 });
             if failure {
-                // Fail if:
-                // - there's something here
-                // - it's out of bounds
-                // - there are no neighbors and we want some
-                // - this is qi and we have a neighbor qi, or this is qi and we sandwich a non-elemental node
-                // - i am sandwiched by qi
                 false
             } else {
                 out.nodes.insert(coord, node);
@@ -144,26 +144,23 @@ impl Board {
         out
     }
 
-    /// Get the node at the given coordinate.
-    ///
-    /// Panics if the coordinate is out of bounds.
+    /// Get the node at the given coordinate, or `None` if it's out of bounds or doesn't exist.
     pub fn get_node(&self, coord: Coordinate) -> Option<Node> {
-        *self.nodes.get(&coord).unwrap()
+        self.nodes.get(&coord).copied().flatten()
     }
-    /// Get the node at the given coordinate, or `None` if it's out of bounds.
-    pub fn try_get_node(&self, coord: Coordinate) -> Option<Option<Node>> {
-        self.nodes.get(&coord).copied()
+    /// Check whether the given coordinate is on the grid.
+    pub fn in_bounds(&self, coord: Coordinate) -> bool {
+        self.nodes.get(&coord).is_some()
     }
     /// Set the node at the given spot. Return Some with the old value if something was clobbered.
     pub fn set_node(&mut self, coord: Coordinate, node: Option<Node>) -> Option<Node> {
-        // we unwrap because we have to be clobbering *something*.
-        self.nodes.insert(coord, node).unwrap()
+        self.nodes.insert(coord, node).flatten()
     }
     /// Iterator through all slots on the board in no particular order.
     pub fn nodes_iter(&self) -> impl Iterator<Item = (Coordinate, Option<Node>)> + '_ {
         Coordinate::new(0, 0)
             .range_iter(Board::RADIUS)
-            .map(move |c| (c, *self.nodes.get(&c).unwrap()))
+            .map(move |c| (c, self.get_node(c)))
     }
 
     /// Return the standard game sans 1 qi to go in the center
