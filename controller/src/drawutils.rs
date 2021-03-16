@@ -7,7 +7,7 @@ use macroquad::prelude::*;
 use crate::{Globals, HEX_HEIGHT, NODE_RADIUS};
 
 /// Draw the Node centered at that position.
-pub fn node(globals: &Globals, node: Node, cx: f32, cy: f32, faded: bool) {
+pub fn node(globals: &Globals, node: &Node, cx: f32, cy: f32, faded: bool) {
     let tex = match node {
         Node::Wood => globals.assets.textures.wood,
         Node::Fire => globals.assets.textures.fire,
@@ -151,11 +151,11 @@ where
     let node_pos = (0..5)
         .map(|idx| offset(idx as f32 * 0.2, HEX_HEIGHT * 1.2))
         .collect::<Vec<_>>();
-    self::node(globals, Node::Destruction, pent_x, pent_y, false);
+    self::node(globals, &Node::Destruction, pent_x, pent_y, false);
     continuation(pent_x, pent_y, TAU * 0.125, Node::Destruction);
     draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.24, 0., 1.2, GRAY);
     draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.3, 0., 1.2, GRAY);
-    for (idx, &node) in [
+    for (idx, node) in [
         Node::Wood,
         Node::Fire,
         Node::Earth,
@@ -175,7 +175,8 @@ where
             offset(idx as f32 * 0.2 + 0.5, HEX_HEIGHT * 0.95),
         );
 
-        self::node(globals, node, pos.0, pos.1, false);
-        continuation(pos.0, pos.1, (0.25 - idx as f32 * 0.2) * TAU, node);
+        self::node(globals, &node, pos.0, pos.1, false);
+        // we clone here because we can't move out of an array iterator :pensive:
+        continuation(pos.0, pos.1, (0.25 - idx as f32 * 0.2) * TAU, node.clone());
     }
 }

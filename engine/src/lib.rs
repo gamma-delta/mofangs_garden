@@ -59,7 +59,7 @@ impl Board {
                         .iter()
                         .any(|&c| out.get_node(c).is_some()))
                     // - this is qi and we have 2 neighbor qi
-                    || (node == Some(Node::Qi)
+                    || (matches!(node, Node::Qi)
                         && Direction::all().iter().filter(|&&dir| {
                             matches!(out.get_node(coord + dir), Some(Node::Qi))
                         }).count() >= 2)
@@ -72,10 +72,10 @@ impl Board {
                 */
                 ;
             if failure {
-                false
+                Some(node)
             } else {
-                out.nodes.insert(coord, node);
-                true
+                out.nodes.insert(coord, Some(node));
+                None
             }
         };
 
@@ -84,7 +84,7 @@ impl Board {
         let chirality = if fastrand::bool() { 1 } else { -1 };
         for idx in 0..3 {
             let pos = Coordinate::new(0, chirality).rotate_around_zero(Angle::from_int(idx * 2));
-            try_insert(pos, Some(Node::Qi), false);
+            try_insert(pos, Node::Qi, false);
         }
 
         'outer: for radius in 1..=Board::RADIUS {
@@ -108,17 +108,14 @@ impl Board {
 
                     if on_spoke && radius == 0 {
                         // Just place Qi
-                        try_insert(coord, Some(Node::Qi), false);
+                        try_insert(coord, Node::Qi, false);
                     }
                     let prob = if on_spoke { 1.0 } else { prob };
                     if fastrand::f32() <= prob {
                         if let Some(node) = bank.pop() {
                             let neighbor_req = radius as f32 / ((Board::RADIUS - 1) as f32);
-                            let success =
-                                try_insert(coord, Some(node), fastrand::f32() <= neighbor_req);
-                            if !success {
-                                // undo it
-                                bank.push(node);
+                            if let Some(failed_to_insert) = try_insert(coord, node, fastrand::f32() <= neighbor_req) {
+                                bank.push(failed_to_insert);
                             }
                         } else {
                             break 'outer;
@@ -132,20 +129,17 @@ impl Board {
         let coord_options = Coordinate::new(0, 0)
             .range_iter(Board::RADIUS)
             .collect_vec();
-        let mut counter = 0;
         while let Some(node) = bank.pop() {
-            'inner: loop {
-                counter += 1;
-                if counter > 1_000 {
+            // TODO: Not sure how to do this nicely since `try_insert` eats `node`,
+            // so I gave up and did it with a fold
+            let result = (0..1000).try_fold(node, |node, _| {
+                let rand_coord = coord_options[fastrand::usize(..coord_options.len())];
+                try_insert(rand_coord, node, true)
+            });
+            if result.is_some() {
                     // just give up and try again
                     println!("giving up...");
                     return Self::new_game();
-                }
-                let rand_coord = coord_options[fastrand::usize(..coord_options.len())];
-                if try_insert(rand_coord, Some(node), true) {
-                    // nice
-                    break 'inner;
-                }
             }
         }
         println!("remaining (must be empty): {:?}", &bank);
@@ -154,8 +148,8 @@ impl Board {
     }
 
     /// Get the node at the given coordinate, or `None` if it's out of bounds or doesn't exist.
-    pub fn get_node(&self, coord: Coordinate) -> Option<Node> {
-        self.nodes.get(&coord).copied().flatten()
+    pub fn get_node(&self, coord: Coordinate) -> Option<&Node> {
+        self.nodes.get(&coord).map(Option::as_ref).flatten()
     }
     /// Check whether the given coordinate is on the grid.
     pub fn in_bounds(&self, coord: Coordinate) -> bool {
@@ -166,7 +160,7 @@ impl Board {
         self.nodes.insert(coord, node).flatten()
     }
     /// Iterator through all slots on the board in no particular order.
-    pub fn nodes_iter(&self) -> impl Iterator<Item = (Coordinate, Option<Node>)> + '_ {
+    pub fn nodes_iter(&self) -> impl Iterator<Item = (Coordinate, Option<&Node>)> + '_ {
         Coordinate::new(0, 0)
             .range_iter(Board::RADIUS)
             .map(move |c| (c, self.get_node(c)))
@@ -177,7 +171,7 @@ impl Board {
     fn standard_game() -> Vec<Node> {
         let mut game = vec![];
 
-        for &element in &[
+        for element in &[
             Node::Wood,
             Node::Fire,
             Node::Earth,
@@ -185,13 +179,13 @@ impl Board {
             Node::Water,
         ] {
             for _ in 0..7 {
-                game.push(element);
+                game.push(element.clone());
             }
         }
 
-        for &node in &[Node::Heavenly, Node::Earthly, Node::Human] {
+        for node in &[Node::Heavenly, Node::Earthly, Node::Human] {
             for _ in 0..4 {
-                game.push(node);
+                game.push(node.clone());
             }
         }
 

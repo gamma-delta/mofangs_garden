@@ -110,7 +110,7 @@ impl ModeGame {
         drawutils::pentagram(globals, pent_x, pent_y, |x, y, angle, node| {
             let (dx, dy) = (mouse_pos.0 - x, mouse_pos.1 - y);
             if dx * dx + dy * dy < NODE_RADIUS * NODE_RADIUS {
-                hovered_node = Some(node);
+                hovered_node = Some(node.clone());
             }
 
             let count = self.node_count[node];
@@ -155,7 +155,7 @@ impl ModeGame {
 
             let unfaded_node = if let Some(node) = self.board.get_node(hex_coord) {
                 let unfaded = match hovered_node {
-                    Some(mnode) => mnode == node,
+                    Some(ref hnode) => *hnode == *node,
                     None => self.is_selectable(hex_coord),
                 };
                 drawutils::node(globals, node, coords.0, coords.1, !unfaded);
@@ -247,7 +247,7 @@ impl ModeGame {
     fn update_node_count(&mut self) {
         self.node_count.clear();
         for node in self.board.nodes_iter().flat_map(|(_, node)| node) {
-            self.node_count[node] += 1;
+            self.node_count[node.clone()] += 1;
         }
     }
 }
