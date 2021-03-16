@@ -46,7 +46,12 @@ impl Node for MofangNode {
             MofangNode::Qi => "qi",
         }
     }
-    fn can_select(&self, board: &Board<MofangNode>, coord: &Coordinate, selected: &[Coordinate]) -> bool {
+    fn can_select(
+        &self,
+        board: &Board<MofangNode>,
+        coord: &Coordinate,
+        selected: &[Coordinate],
+    ) -> bool {
         let freeness_req = match selected {
             // Human magic
             [human_coord]

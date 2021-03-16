@@ -69,11 +69,11 @@ impl ModeGame {
                 } else if self.is_selectable(hovered) {
                     self.selected_slots.push(hovered);
                     // See if we have a WOMBO COMBO
-                    let combo = self
+                    let combo: Vec<_> = self
                         .selected_slots
                         .iter()
                         .flat_map(|&c| self.board.get_node(c))
-                        .collect::<Vec<_>>();
+                        .collect();
                     if let PartialResult::Success(change) = Node::select(&combo) {
                         // nice!
                         for (update, &slot) in change.into_iter().zip(self.selected_slots.iter()) {
@@ -184,7 +184,6 @@ impl ModeGame {
         }
     }
 
-
     /// TODO: This function should be part of MofangNode.
     /// We shouldn't trust the controller to do stuff like this.
     fn is_selectable(&self, coord: Coordinate) -> bool {
@@ -195,12 +194,12 @@ impl ModeGame {
 
         node.can_select(&self.board, &coord, self.selected_slots.as_slice()) && {
             // check to see if this is an allowed combo
-            let potential_select = self
+            let potential_select: Vec<_> = self
                 .selected_slots
                 .iter()
                 .flat_map(|c| self.board.get_node(*c))
                 .chain(Some(node))
-                .collect::<Vec<_>>();
+                .collect();
             Node::select(&potential_select).is_valid()
         }
     }

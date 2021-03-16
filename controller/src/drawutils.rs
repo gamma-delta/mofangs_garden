@@ -74,16 +74,12 @@ pub fn center_text(globals: &Globals, text: &str, size: u16, cx: f32, cy: f32) {
     self::text(globals, text, size, cx, center_y, TextAlign::Center);
 }
 
-// shut up
-#[allow(clippy::too_many_arguments)]
 pub fn arrow(
-    cx: f32,
-    cy: f32,
+    position: (f32, f32),
     angle: f32,
     length: f32,
     width: f32,
-    tip_width: f32,
-    tip_length: f32,
+    (tip_width, tip_length): (f32, f32),
     color: Color,
 ) {
     let line_start = vec2(0.0, 0.0);
@@ -93,7 +89,7 @@ pub fn arrow(
     let point_bottom = vec2(length - tip_length, tip_width / 2.0);
 
     // linear algebra is pogchamp
-    let t = Mat3::from_scale_angle_translation(vec2(1.0, 1.0), angle, vec2(cx, cy));
+    let t = Mat3::from_scale_angle_translation(vec2(1.0, 1.0), angle, position.into());
     let line_start = t.transform_point2(line_start);
     let line_end = t.transform_point2(line_end);
     let point_end = t.transform_point2(point_end);
@@ -117,14 +113,13 @@ pub fn node_arrow(from: (f32, f32), to: (f32, f32), padding: f32, skew_angle: f3
     let angle = dy.atan2(dx);
     // length is distance between centers minus twice the padding
     let len = (dx * dx + dy * dy).sqrt() - 2. * arrow_pad * skew_angle.cos();
+    let (base_sin, base_cos) = (skew_angle + angle).sin_cos();
     arrow(
-        from.0 + arrow_pad * (skew_angle + angle).cos(),
-        from.1 + arrow_pad * (skew_angle + angle).sin(),
+        (from.0 + arrow_pad * base_cos, from.1 + arrow_pad * base_sin),
         angle,
         len,
         2.0,
-        NODE_RADIUS * 0.2,
-        NODE_RADIUS * 0.2,
+        (NODE_RADIUS * 0.2, NODE_RADIUS * 0.2),
         color,
     );
 }
@@ -147,9 +142,9 @@ where
         let (dx, dy) = (angle * TAU).sin_cos();
         (pent_x + rad * dx, pent_y - rad * dy)
     };
-    let node_pos = (0..5)
+    let node_pos: Vec<_> = (0..5)
         .map(|idx| offset(idx as f32 * 0.2, HEX_HEIGHT * 1.2))
-        .collect::<Vec<_>>();
+        .collect();
     self::node(globals, &MofangNode::Destruction, pent_x, pent_y, false);
     continuation(pent_x, pent_y, TAU * 0.125, MofangNode::Destruction);
     draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.24, 0., 1.2, GRAY);

@@ -6,7 +6,12 @@ pub trait Node: Sized {
     /// What texture does this node have?
     fn texture_name(&self) -> &'static str;
     /// Can the node at this position be selected?
-    fn can_select(&self, board: &Board<Self>, coordinate: &Coordinate, selected: &[Coordinate]) -> bool;
+    fn can_select(
+        &self,
+        board: &Board<Self>,
+        coordinate: &Coordinate,
+        selected: &[Coordinate],
+    ) -> bool;
 
     /// Given a list of Nodes, see whether this pattern could exist
     /// and, if so, what to replace each Node with.
