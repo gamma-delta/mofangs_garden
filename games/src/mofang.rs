@@ -26,12 +26,18 @@ pub enum MofangNode {
 }
 
 impl Node for MofangNode {
-    /// What's the number of contiguous open nodes required to be selectable?
-    fn freeness_req(&self) -> usize {
-        match self {
-            MofangNode::Qi => 5,
-            _ => 3,
-        }
+    fn can_select(&self, board: &Board<MofangNode>, coord: &Coordinate, selected: &[Coordinate]) -> bool {
+        let freeness_req = match selected {
+            // Human magic
+            [human_coord]
+                if matches!(board.get_node(*human_coord), Some(MofangNode::Human))
+                    && self.is_elemental() =>
+            {
+                2
+            }
+            _ => self.freeness_req(),
+        };
+        board.max_open_neighbors(coord) >= freeness_req
     }
 
     /// Given a list of Nodes, see whether this pattern could exist
@@ -49,7 +55,7 @@ impl Node for MofangNode {
                     .enumerate()
                     .sorted_unstable_by_key(|(_i, n)| *n)
                     .unzip();
-                let unsort = |v: Vec<Option<MofangNode>>| {
+                let unsort = |v| {
                     original_idxes
                         .into_iter()
                         .zip(v)
@@ -232,6 +238,14 @@ impl Node for MofangNode {
 }
 
 impl MofangNode {
+    /// What's the number of contiguous open nodes required to be selectable?
+    fn freeness_req(&self) -> usize {
+        match self {
+            MofangNode::Qi => 5,
+            _ => 3,
+        }
+    }
+
     pub fn is_elemental(&self) -> bool {
         matches!(
             self,

@@ -1,8 +1,8 @@
-use crate::Board;
+use crate::{Board, Coordinate};
 
 pub trait Node: Sized {
-    /// How many contiguous open neighbors does this node need to be free?
-    fn freeness_req(&self) -> usize;
+    /// Can the node at this position be selected?
+    fn can_select(&self, board: &Board<Self>, coordinate: &Coordinate, selected: &[Coordinate]) -> bool;
 
     /// Given a list of Nodes, see whether this pattern could exist
     /// and, if so, what to replace each Node with.

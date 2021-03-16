@@ -60,6 +60,35 @@ impl<N: Node> Board<N> {
             .range_iter(self.radius())
             .map(move |c| (c, self.get_node(c)))
     }
+
+    /// Convenience method:
+    /// How many open neighbors are there around the coord?
+    pub fn max_open_neighbors(&self, at: &Coordinate) -> usize {
+        match at
+            .neighbors()
+            .iter()
+            .position(|&coord| self.get_node(coord).is_some())
+        {
+            Some(pos) => {
+                // At least one neighbor exists, iter around it
+                at.neighbors()
+                    .iter()
+                    .cycle()
+                    .skip(pos + 1)
+                    .take(6)
+                    .fold((0, 0), |(maxrun, run), &neighbor| {
+                        if self.get_node(neighbor).is_some() {
+                            (maxrun.max(run), 0)
+                        } else {
+                            (maxrun, run + 1)
+                        }
+                    })
+                    .0
+            }
+            // Everything is empty and fine
+            None => 6,
+        }
+    }
 }
 
 /// Convenient helper function for your game implementations.

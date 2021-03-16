@@ -172,7 +172,7 @@ impl ModeGame {
             }
 
             if is_key_down(KeyCode::LeftShift) {
-                let open_count = self.max_open_neighbors(hex_coord);
+                let open_count = self.board.max_open_neighbors(&hex_coord);
                 draw_text(
                     open_count.to_string().as_str(),
                     coords.0,
@@ -184,32 +184,6 @@ impl ModeGame {
         }
     }
 
-    fn max_open_neighbors(&self, at: Coordinate) -> usize {
-        match at
-            .neighbors()
-            .iter()
-            .position(|&coord| self.board.get_node(coord).is_some())
-        {
-            Some(pos) => {
-                // At least one neighbor exists, iter around it
-                at.neighbors()
-                    .iter()
-                    .cycle()
-                    .skip(pos + 1)
-                    .take(6)
-                    .fold((0, 0), |(maxrun, run), &neighbor| {
-                        if self.board.get_node(neighbor).is_some() {
-                            (maxrun.max(run), 0)
-                        } else {
-                            (maxrun, run + 1)
-                        }
-                    })
-                    .0
-            }
-            // Everything is empty and fine
-            None => 6,
-        }
-    }
 
     /// TODO: This function should be part of MofangNode.
     /// We shouldn't trust the controller to do stuff like this.
@@ -219,20 +193,7 @@ impl ModeGame {
             None => return false,
         };
 
-        let freeness_req = match self.selected_slots.as_slice() {
-            // Human magic
-            [human_coord]
-                if matches!(self.board.get_node(*human_coord), Some(MofangNode::Human))
-                    && node.is_elemental() =>
-            {
-                2
-            }
-            _ => node.freeness_req(),
-        };
-        if self.max_open_neighbors(coord) < freeness_req {
-            // we didn't make it
-            false
-        } else {
+        node.can_select(&self.board, &coord, self.selected_slots.as_slice()) && {
             // check to see if this is an allowed combo
             let potential_select = self
                 .selected_slots
