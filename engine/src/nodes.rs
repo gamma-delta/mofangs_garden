@@ -123,15 +123,21 @@ impl Node {
                     .iter()
                     .cloned()
                     .enumerate()
-                    .sorted_unstable_by_key(|(_i, n)| n.clone())
+                    .sorted_unstable_by_key(|(_i, n)| *n)
                     .unzip();
-                let unsort = |v: Vec<Option<Node>>| 
-                    original_idxes.into_iter().zip(v).sorted_unstable_by_key(|val| val.0).map(|(_, val)| val).collect_vec();
+                let unsort = |v: Vec<Option<Node>>| {
+                    original_idxes
+                        .into_iter()
+                        .zip(v)
+                        .sorted_unstable_by_key(|val| val.0)
+                        .map(|(_, val)| val)
+                        .collect_vec()
+                };
 
                 match sorted.as_slice() {
                     // Destruction requires some Special Handling
                     [rest @ .., Node::Destruction]
-                        if rest.into_iter().all(|&n| n.is_elemental()) && all_unique(rest.iter()) =>
+                        if rest.iter().all(|&n| n.is_elemental()) && all_unique(rest.iter()) =>
                     {
                         if rest.len() == 5 {
                             // we caught them all

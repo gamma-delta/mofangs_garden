@@ -82,8 +82,9 @@ impl Board {
         // +1 => right
         // -1 => left
         let chirality = if fastrand::bool() { 1 } else { -1 };
+        // make the non-spokes surrounding the center always be qi
         for idx in 0..3 {
-            let pos = Coordinate::new(0, chirality).rotate_around_zero(Angle::from_int(idx * 2));
+            let pos = Coordinate::new(0, -chirality).rotate_around_zero(Angle::from_int(idx * 2));
             try_insert(pos, Node::Qi, false);
         }
 
@@ -114,7 +115,9 @@ impl Board {
                     if fastrand::f32() <= prob {
                         if let Some(node) = bank.pop() {
                             let neighbor_req = radius as f32 / ((Board::RADIUS - 1) as f32);
-                            if let Some(failed_to_insert) = try_insert(coord, node, fastrand::f32() <= neighbor_req) {
+                            if let Some(failed_to_insert) =
+                                try_insert(coord, node, fastrand::f32() <= neighbor_req)
+                            {
                                 bank.push(failed_to_insert);
                             }
                         } else {
@@ -137,9 +140,9 @@ impl Board {
                 try_insert(rand_coord, node, true)
             });
             if result.is_some() {
-                    // just give up and try again
-                    println!("giving up...");
-                    return Self::new_game();
+                // just give up and try again
+                println!("giving up...");
+                return Self::new_game();
             }
         }
         println!("remaining (must be empty): {:?}", &bank);
