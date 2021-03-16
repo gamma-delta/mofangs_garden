@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 mofang_engine = {path = "../engine"}
+mofang_games = {path = "../games"}
 macroquad = {git = "https://github.com/not-fl3/macroquad.git"}
 hex2d = "1.0.0"
 once_cell = "1.7.2"

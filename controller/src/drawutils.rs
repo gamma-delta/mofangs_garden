@@ -1,27 +1,26 @@
 use std::f32::consts::TAU;
 
-use mofang_engine::Node;
-
 use macroquad::prelude::*;
+use mofang_games::MofangNode;
 
 use crate::{Globals, HEX_HEIGHT, NODE_RADIUS};
 
-/// Draw the Node centered at that position.
-pub fn node(globals: &Globals, node: &Node, cx: f32, cy: f32, faded: bool) {
+/// Draw the MofangNode centered at that position.
+pub fn node(globals: &Globals, node: &MofangNode, cx: f32, cy: f32, faded: bool) {
     let tex = match node {
-        Node::Wood => globals.assets.textures.wood,
-        Node::Fire => globals.assets.textures.fire,
-        Node::Earth => globals.assets.textures.earth,
-        Node::Metal => globals.assets.textures.metal,
-        Node::Water => globals.assets.textures.water,
-        Node::Heavenly => globals.assets.textures.heavenly,
-        Node::Earthly => globals.assets.textures.earthly,
-        Node::Human => globals.assets.textures.human,
-        Node::Yin => globals.assets.textures.yin,
-        Node::Yang => globals.assets.textures.yang,
-        Node::Creation => globals.assets.textures.creation,
-        Node::Destruction => globals.assets.textures.destruction,
-        Node::Qi => globals.assets.textures.qi,
+        MofangNode::Wood => globals.assets.textures.wood,
+        MofangNode::Fire => globals.assets.textures.fire,
+        MofangNode::Earth => globals.assets.textures.earth,
+        MofangNode::Metal => globals.assets.textures.metal,
+        MofangNode::Water => globals.assets.textures.water,
+        MofangNode::Heavenly => globals.assets.textures.heavenly,
+        MofangNode::Earthly => globals.assets.textures.earthly,
+        MofangNode::Human => globals.assets.textures.human,
+        MofangNode::Yin => globals.assets.textures.yin,
+        MofangNode::Yang => globals.assets.textures.yang,
+        MofangNode::Creation => globals.assets.textures.creation,
+        MofangNode::Destruction => globals.assets.textures.destruction,
+        MofangNode::Qi => globals.assets.textures.qi,
     };
 
     if faded {
@@ -142,7 +141,7 @@ pub fn draw_centered(tex: Texture2D, (x, y): (f32, f32)) {
 
 pub fn pentagram<C>(globals: &Globals, pent_x: f32, pent_y: f32, mut continuation: C)
 where
-    C: FnMut(f32, f32, f32, Node),
+    C: FnMut(f32, f32, f32, MofangNode),
 {
     let offset = |angle: f32, rad| {
         let (dx, dy) = (angle * TAU).sin_cos();
@@ -151,16 +150,16 @@ where
     let node_pos = (0..5)
         .map(|idx| offset(idx as f32 * 0.2, HEX_HEIGHT * 1.2))
         .collect::<Vec<_>>();
-    self::node(globals, &Node::Destruction, pent_x, pent_y, false);
-    continuation(pent_x, pent_y, TAU * 0.125, Node::Destruction);
+    self::node(globals, &MofangNode::Destruction, pent_x, pent_y, false);
+    continuation(pent_x, pent_y, TAU * 0.125, MofangNode::Destruction);
     draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.24, 0., 1.2, GRAY);
     draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.3, 0., 1.2, GRAY);
     for (idx, node) in [
-        Node::Wood,
-        Node::Fire,
-        Node::Earth,
-        Node::Metal,
-        Node::Water,
+        MofangNode::Wood,
+        MofangNode::Fire,
+        MofangNode::Earth,
+        MofangNode::Metal,
+        MofangNode::Water,
     ]
     .iter()
     .enumerate()

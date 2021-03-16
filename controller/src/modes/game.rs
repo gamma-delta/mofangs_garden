@@ -2,19 +2,17 @@ use enum_map::EnumMap;
 use hex2d::{Coordinate, Spacing};
 use macroquad::prelude::*;
 use mofang_engine::{Board, Node, PartialResult};
+use mofang_games::MofangNode;
 
 use crate::{drawutils, Globals, Mode, Transition, HEX_HEIGHT, HEX_SIZE, HEX_WIDTH, NODE_RADIUS};
 
 use super::rules::ModeRules;
 
-const BOARD_ORIGIN_X: f32 = (Board::RADIUS + 1) as f32 * HEX_WIDTH;
-const BOARD_ORIGIN_Y: f32 = (Board::RADIUS + 1) as f32 * HEX_HEIGHT * 0.75;
-
 pub struct ModeGame {
-    board: Board,
+    board: Board<MofangNode>,
     hovered_slot: Option<Coordinate>,
     selected_slots: Vec<Coordinate>,
-    node_count: EnumMap<Node, u32>,
+    node_count: EnumMap<MofangNode, u32>,
 
     won: bool,
 }
@@ -22,7 +20,7 @@ pub struct ModeGame {
 impl ModeGame {
     pub fn new_game() -> Self {
         let mut this = Self {
-            board: Board::new_game(),
+            board: MofangNode::new_game_random(),
             hovered_slot: None,
             selected_slots: Vec::new(),
             node_count: EnumMap::new(),
@@ -51,8 +49,8 @@ impl ModeGame {
             return Transition::None;
         }
 
-        let dmouse_x = mouse_raw.0 - BOARD_ORIGIN_X;
-        let dmouse_y = mouse_raw.1 - BOARD_ORIGIN_Y;
+        let dmouse_x = mouse_raw.0 - self.board_origin_x();
+        let dmouse_y = mouse_raw.1 - self.board_origin_y();
 
         let hovered_coord =
             Coordinate::from_pixel(dmouse_x, dmouse_y, Spacing::PointyTop(HEX_SIZE));
@@ -140,11 +138,11 @@ impl ModeGame {
         );
 
         // Draw board
-        for hex_coord in Coordinate::new(0, 0).range_iter(Board::RADIUS) {
+        for hex_coord in Coordinate::new(0, 0).range_iter(self.board.radius()) {
             let zero_coords = hex_coord.to_pixel(Spacing::PointyTop(HEX_SIZE));
             let coords = (
-                zero_coords.0 + BOARD_ORIGIN_X,
-                zero_coords.1 + BOARD_ORIGIN_Y,
+                zero_coords.0 + self.board_origin_x(),
+                zero_coords.1 + self.board_origin_y(),
             );
             draw_texture(
                 globals.assets.textures.hex,
@@ -213,6 +211,8 @@ impl ModeGame {
         }
     }
 
+    /// TODO: This function should be part of MofangNode.
+    /// We shouldn't trust the controller to do stuff like this.
     fn is_selectable(&self, coord: Coordinate) -> bool {
         let node = match self.board.get_node(coord) {
             Some(it) => it,
@@ -222,7 +222,7 @@ impl ModeGame {
         let freeness_req = match self.selected_slots.as_slice() {
             // Human magic
             [human_coord]
-                if matches!(self.board.get_node(*human_coord), Some(Node::Human))
+                if matches!(self.board.get_node(*human_coord), Some(MofangNode::Human))
                     && node.is_elemental() =>
             {
                 2
@@ -249,6 +249,13 @@ impl ModeGame {
         for node in self.board.nodes_iter().flat_map(|(_, node)| node) {
             self.node_count[node.clone()] += 1;
         }
+    }
+
+    fn board_origin_x(&self) -> f32 {
+        (self.board.radius() + 1) as f32 * HEX_WIDTH
+    }
+    fn board_origin_y(&self) -> f32 {
+        (self.board.radius() + 1) as f32 * HEX_HEIGHT * 0.75
     }
 }
 
