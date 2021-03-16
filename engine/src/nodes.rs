@@ -1,6 +1,10 @@
 use crate::{Board, Coordinate};
 
 pub trait Node: Sized {
+    /// What game are these nodes for?
+    fn name() -> &'static str;
+    /// What texture does this node have?
+    fn texture_name(&self) -> &'static str;
     /// Can the node at this position be selected?
     fn can_select(&self, board: &Board<Self>, coordinate: &Coordinate, selected: &[Coordinate]) -> bool;
 

@@ -1,9 +1,7 @@
 pub mod nodes;
 pub use nodes::{Node, PartialResult};
 
-use itertools::Itertools;
-
-use hex2d::{Angle, Coordinate, Direction, Spin};
+use hex2d::Coordinate;
 
 use std::collections::HashMap;
 

@@ -26,6 +26,26 @@ pub enum MofangNode {
 }
 
 impl Node for MofangNode {
+    fn name() -> &'static str {
+        "mofang"
+    }
+    fn texture_name(&self) -> &'static str {
+        match self {
+            MofangNode::Wood => "wood",
+            MofangNode::Fire => "fire",
+            MofangNode::Earth => "earth",
+            MofangNode::Metal => "metal",
+            MofangNode::Water => "water",
+            MofangNode::Heavenly => "heavenly",
+            MofangNode::Earthly => "earthly",
+            MofangNode::Human => "human",
+            MofangNode::Yin => "yin",
+            MofangNode::Yang => "yang",
+            MofangNode::Creation => "creation",
+            MofangNode::Destruction => "destruction",
+            MofangNode::Qi => "qi",
+        }
+    }
     fn can_select(&self, board: &Board<MofangNode>, coord: &Coordinate, selected: &[Coordinate]) -> bool {
         let freeness_req = match selected {
             // Human magic
