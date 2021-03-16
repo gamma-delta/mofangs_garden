@@ -2,7 +2,7 @@ use enum_map::Enum;
 use itertools::Itertools;
 
 /// One of the marbles on the game board.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Enum)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Enum)]
 pub enum Node {
     Wood,
     Fire,
@@ -67,7 +67,7 @@ impl Node {
     }
 
     /// Does this cancel as a pair with other?
-    fn cancels_with(&self, other: Node) -> bool {
+    fn cancels_with(&self, other: &Node) -> bool {
         // One-to-one cancellations
         let expect = match self {
             Node::Fire => Some(Node::Metal),
@@ -85,7 +85,7 @@ impl Node {
             Node::Creation => Some(Node::Creation),
             _ => None,
         };
-        expect.filter(|o| *o == other).is_some()
+        expect.filter(|o| *o == *other).is_some()
     }
 
     /// What does Change turn this into, if any?
@@ -112,25 +112,26 @@ impl Node {
 
     /// Given a list of Nodes, see whether this pattern could exist
     /// and, if so, what to replace each Node with.
-    pub fn select(nodes: &[Node]) -> PartialResult<Vec<Option<Node>>> {
+    pub fn select(nodes: &[&Node]) -> PartialResult<Vec<Option<Node>>> {
         match nodes.len() {
             0 => unreachable!("You can't select 0 nodes!"),
             1 => PartialResult::Continue,
-            2 if nodes[0].cancels_with(nodes[1]) => PartialResult::Success(vec![None, None]),
+            2 if nodes[0].cancels_with(&nodes[1]) => PartialResult::Success(vec![None, None]),
             _ => {
+                // TODO: I am bad at rust, not sure how sorted_unstable_by_key works
                 let (original_idxes, sorted): (Vec<_>, Vec<_>) = nodes
                     .iter()
                     .cloned()
                     .enumerate()
-                    .sorted_unstable_by_key(|x| x.1)
+                    .sorted_unstable_by_key(|(_i, n)| n.clone())
                     .unzip();
-                let unsort =
-                    |v: Vec<Option<Node>>| original_idxes.iter().map(|&idx| v[idx]).collect_vec();
+                let unsort = |v: Vec<Option<Node>>| 
+                    original_idxes.into_iter().zip(v).sorted_unstable_by_key(|val| val.0).map(|(_, val)| val).collect_vec();
 
                 match sorted.as_slice() {
                     // Destruction requires some Special Handling
                     [rest @ .., Node::Destruction]
-                        if rest.iter().all(Node::is_elemental) && all_unique(rest.iter()) =>
+                        if rest.into_iter().all(|&n| n.is_elemental()) && all_unique(rest.iter()) =>
                     {
                         if rest.len() == 5 {
                             // we caught them all
@@ -171,7 +172,7 @@ impl Node {
                     */
                     // Human ingenuity can attract any element
                     [element, Node::Human] if element.is_elemental() => {
-                        PartialResult::Success(unsort(vec![None, Some(*element)]))
+                        PartialResult::Success(unsort(vec![None, Some((*element).clone())]))
                     }
 
                     [changeable, Node::Creation] if changeable.can_change() =>
