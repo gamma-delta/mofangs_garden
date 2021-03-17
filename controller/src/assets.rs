@@ -92,6 +92,7 @@ async fn texture(path: &str) -> Texture2D {
     load_texture(
         ASSETS_ROOT
             .join("textures")
+            .join("mofang") // TODO modularize thsi
             .join(with_extension)
             .to_string_lossy()
             .as_ref(),

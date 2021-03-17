@@ -1146,6 +1146,7 @@ dependencies = [
  "hex2d",
  "macroquad",
  "mofang_engine",
+ "mofang_games",
  "once_cell",
 ]
 
@@ -1157,6 +1158,17 @@ dependencies = [
  "fastrand",
  "hex2d",
  "itertools",
+]
+
+[[package]]
+name = "mofang_games"
+version = "0.1.0"
+dependencies = [
+ "enum-map",
+ "fastrand",
+ "hex2d",
+ "itertools",
+ "mofang_engine",
 ]
 
 [[package]]

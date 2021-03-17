@@ -5,15 +5,14 @@ mod modes;
 use assets::Assets;
 use macroquad::prelude::*;
 use modes::{game::ModeGame, rules::ModeRules};
-use mofang_engine::Board;
 
 const HEX_SIZE: f32 = 40.0;
 const HEX_WIDTH: f32 = HEX_SIZE * 1.732_050_8; // sqrt(3)
 const HEX_HEIGHT: f32 = HEX_SIZE * 2.0;
 const NODE_RADIUS: f32 = 32.0;
 
-const WINDOW_WIDTH: f32 = HEX_WIDTH * (Board::DIAMETER + 5) as f32;
-const WINDOW_HEIGHT: f32 = HEX_HEIGHT * (Board::DIAMETER + 1) as f32 * 0.75;
+const WINDOW_WIDTH: f32 = HEX_WIDTH * (11 + 5) as f32;
+const WINDOW_HEIGHT: f32 = HEX_HEIGHT * (11 + 1) as f32 * 0.75;
 
 fn window_conf() -> Conf {
     Conf {

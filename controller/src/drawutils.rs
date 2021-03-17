@@ -1,27 +1,26 @@
 use std::f32::consts::TAU;
 
-use mofang_engine::Node;
-
 use macroquad::prelude::*;
+use mofang_games::MofangNode;
 
 use crate::{Globals, HEX_HEIGHT, NODE_RADIUS};
 
-/// Draw the Node centered at that position.
-pub fn node(globals: &Globals, node: &Node, cx: f32, cy: f32, faded: bool) {
+/// Draw the MofangNode centered at that position.
+pub fn node(globals: &Globals, node: &MofangNode, cx: f32, cy: f32, faded: bool) {
     let tex = match node {
-        Node::Wood => globals.assets.textures.wood,
-        Node::Fire => globals.assets.textures.fire,
-        Node::Earth => globals.assets.textures.earth,
-        Node::Metal => globals.assets.textures.metal,
-        Node::Water => globals.assets.textures.water,
-        Node::Heavenly => globals.assets.textures.heavenly,
-        Node::Earthly => globals.assets.textures.earthly,
-        Node::Human => globals.assets.textures.human,
-        Node::Yin => globals.assets.textures.yin,
-        Node::Yang => globals.assets.textures.yang,
-        Node::Creation => globals.assets.textures.creation,
-        Node::Destruction => globals.assets.textures.destruction,
-        Node::Qi => globals.assets.textures.qi,
+        MofangNode::Wood => globals.assets.textures.wood,
+        MofangNode::Fire => globals.assets.textures.fire,
+        MofangNode::Earth => globals.assets.textures.earth,
+        MofangNode::Metal => globals.assets.textures.metal,
+        MofangNode::Water => globals.assets.textures.water,
+        MofangNode::Heavenly => globals.assets.textures.heavenly,
+        MofangNode::Earthly => globals.assets.textures.earthly,
+        MofangNode::Human => globals.assets.textures.human,
+        MofangNode::Yin => globals.assets.textures.yin,
+        MofangNode::Yang => globals.assets.textures.yang,
+        MofangNode::Creation => globals.assets.textures.creation,
+        MofangNode::Destruction => globals.assets.textures.destruction,
+        MofangNode::Qi => globals.assets.textures.qi,
     };
 
     if faded {
@@ -75,16 +74,12 @@ pub fn center_text(globals: &Globals, text: &str, size: u16, cx: f32, cy: f32) {
     self::text(globals, text, size, cx, center_y, TextAlign::Center);
 }
 
-// shut up
-#[allow(clippy::too_many_arguments)]
 pub fn arrow(
-    cx: f32,
-    cy: f32,
+    position: (f32, f32),
     angle: f32,
     length: f32,
     width: f32,
-    tip_width: f32,
-    tip_length: f32,
+    (tip_width, tip_length): (f32, f32),
     color: Color,
 ) {
     let line_start = vec2(0.0, 0.0);
@@ -94,7 +89,7 @@ pub fn arrow(
     let point_bottom = vec2(length - tip_length, tip_width / 2.0);
 
     // linear algebra is pogchamp
-    let t = Mat3::from_scale_angle_translation(vec2(1.0, 1.0), angle, vec2(cx, cy));
+    let t = Mat3::from_scale_angle_translation(vec2(1.0, 1.0), angle, position.into());
     let line_start = t.transform_point2(line_start);
     let line_end = t.transform_point2(line_end);
     let point_end = t.transform_point2(point_end);
@@ -118,14 +113,13 @@ pub fn node_arrow(from: (f32, f32), to: (f32, f32), padding: f32, skew_angle: f3
     let angle = dy.atan2(dx);
     // length is distance between centers minus twice the padding
     let len = (dx * dx + dy * dy).sqrt() - 2. * arrow_pad * skew_angle.cos();
+    let (base_sin, base_cos) = (skew_angle + angle).sin_cos();
     arrow(
-        from.0 + arrow_pad * (skew_angle + angle).cos(),
-        from.1 + arrow_pad * (skew_angle + angle).sin(),
+        (from.0 + arrow_pad * base_cos, from.1 + arrow_pad * base_sin),
         angle,
         len,
         2.0,
-        NODE_RADIUS * 0.2,
-        NODE_RADIUS * 0.2,
+        (NODE_RADIUS * 0.2, NODE_RADIUS * 0.2),
         color,
     );
 }
@@ -142,25 +136,25 @@ pub fn draw_centered(tex: Texture2D, (x, y): (f32, f32)) {
 
 pub fn pentagram<C>(globals: &Globals, pent_x: f32, pent_y: f32, mut continuation: C)
 where
-    C: FnMut(f32, f32, f32, Node),
+    C: FnMut(f32, f32, f32, MofangNode),
 {
     let offset = |angle: f32, rad| {
         let (dx, dy) = (angle * TAU).sin_cos();
         (pent_x + rad * dx, pent_y - rad * dy)
     };
-    let node_pos = (0..5)
+    let node_pos: Vec<_> = (0..5)
         .map(|idx| offset(idx as f32 * 0.2, HEX_HEIGHT * 1.2))
-        .collect::<Vec<_>>();
-    self::node(globals, &Node::Destruction, pent_x, pent_y, false);
-    continuation(pent_x, pent_y, TAU * 0.125, Node::Destruction);
+        .collect();
+    self::node(globals, &MofangNode::Destruction, pent_x, pent_y, false);
+    continuation(pent_x, pent_y, TAU * 0.125, MofangNode::Destruction);
     draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.24, 0., 1.2, GRAY);
     draw_poly_lines(pent_x, pent_y, 40, HEX_HEIGHT * 1.3, 0., 1.2, GRAY);
     for (idx, node) in [
-        Node::Wood,
-        Node::Fire,
-        Node::Earth,
-        Node::Metal,
-        Node::Water,
+        MofangNode::Wood,
+        MofangNode::Fire,
+        MofangNode::Earth,
+        MofangNode::Metal,
+        MofangNode::Water,
     ]
     .iter()
     .enumerate()

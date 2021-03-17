@@ -2,19 +2,17 @@ use enum_map::EnumMap;
 use hex2d::{Coordinate, Spacing};
 use macroquad::prelude::*;
 use mofang_engine::{Board, Node, PartialResult};
+use mofang_games::MofangNode;
 
 use crate::{drawutils, Globals, Mode, Transition, HEX_HEIGHT, HEX_SIZE, HEX_WIDTH, NODE_RADIUS};
 
 use super::rules::ModeRules;
 
-const BOARD_ORIGIN_X: f32 = (Board::RADIUS + 1) as f32 * HEX_WIDTH;
-const BOARD_ORIGIN_Y: f32 = (Board::RADIUS + 1) as f32 * HEX_HEIGHT * 0.75;
-
 pub struct ModeGame {
-    board: Board,
+    board: Board<MofangNode>,
     hovered_slot: Option<Coordinate>,
     selected_slots: Vec<Coordinate>,
-    node_count: EnumMap<Node, u32>,
+    node_count: EnumMap<MofangNode, u32>,
 
     won: bool,
 }
@@ -22,7 +20,7 @@ pub struct ModeGame {
 impl ModeGame {
     pub fn new_game() -> Self {
         let mut this = Self {
-            board: Board::new_game(),
+            board: MofangNode::new_game_random(),
             hovered_slot: None,
             selected_slots: Vec::new(),
             node_count: EnumMap::new(),
@@ -51,8 +49,8 @@ impl ModeGame {
             return Transition::None;
         }
 
-        let dmouse_x = mouse_raw.0 - BOARD_ORIGIN_X;
-        let dmouse_y = mouse_raw.1 - BOARD_ORIGIN_Y;
+        let dmouse_x = mouse_raw.0 - self.board_origin_x();
+        let dmouse_y = mouse_raw.1 - self.board_origin_y();
 
         let hovered_coord =
             Coordinate::from_pixel(dmouse_x, dmouse_y, Spacing::PointyTop(HEX_SIZE));
@@ -71,11 +69,11 @@ impl ModeGame {
                 } else if self.is_selectable(hovered) {
                     self.selected_slots.push(hovered);
                     // See if we have a WOMBO COMBO
-                    let combo = self
+                    let combo: Vec<_> = self
                         .selected_slots
                         .iter()
                         .flat_map(|&c| self.board.get_node(c))
-                        .collect::<Vec<_>>();
+                        .collect();
                     if let PartialResult::Success(change) = Node::select(&combo) {
                         // nice!
                         for (update, &slot) in change.into_iter().zip(self.selected_slots.iter()) {
@@ -140,11 +138,11 @@ impl ModeGame {
         );
 
         // Draw board
-        for hex_coord in Coordinate::new(0, 0).range_iter(Board::RADIUS) {
+        for hex_coord in Coordinate::new(0, 0).range_iter(self.board.radius()) {
             let zero_coords = hex_coord.to_pixel(Spacing::PointyTop(HEX_SIZE));
             let coords = (
-                zero_coords.0 + BOARD_ORIGIN_X,
-                zero_coords.1 + BOARD_ORIGIN_Y,
+                zero_coords.0 + self.board_origin_x(),
+                zero_coords.1 + self.board_origin_y(),
             );
             draw_texture(
                 globals.assets.textures.hex,
@@ -174,7 +172,7 @@ impl ModeGame {
             }
 
             if is_key_down(KeyCode::LeftShift) {
-                let open_count = self.max_open_neighbors(hex_coord);
+                let open_count = self.board.max_open_neighbors(&hex_coord);
                 draw_text(
                     open_count.to_string().as_str(),
                     coords.0,
@@ -186,60 +184,22 @@ impl ModeGame {
         }
     }
 
-    fn max_open_neighbors(&self, at: Coordinate) -> usize {
-        match at
-            .neighbors()
-            .iter()
-            .position(|&coord| self.board.get_node(coord).is_some())
-        {
-            Some(pos) => {
-                // At least one neighbor exists, iter around it
-                at.neighbors()
-                    .iter()
-                    .cycle()
-                    .skip(pos + 1)
-                    .take(6)
-                    .fold((0, 0), |(maxrun, run), &neighbor| {
-                        if self.board.get_node(neighbor).is_some() {
-                            (maxrun.max(run), 0)
-                        } else {
-                            (maxrun, run + 1)
-                        }
-                    })
-                    .0
-            }
-            // Everything is empty and fine
-            None => 6,
-        }
-    }
-
+    /// TODO: This function should be part of MofangNode.
+    /// We shouldn't trust the controller to do stuff like this.
     fn is_selectable(&self, coord: Coordinate) -> bool {
         let node = match self.board.get_node(coord) {
             Some(it) => it,
             None => return false,
         };
 
-        let freeness_req = match self.selected_slots.as_slice() {
-            // Human magic
-            [human_coord]
-                if matches!(self.board.get_node(*human_coord), Some(Node::Human))
-                    && node.is_elemental() =>
-            {
-                2
-            }
-            _ => node.freeness_req(),
-        };
-        if self.max_open_neighbors(coord) < freeness_req {
-            // we didn't make it
-            false
-        } else {
+        node.can_select(&self.board, &coord, self.selected_slots.as_slice()) && {
             // check to see if this is an allowed combo
-            let potential_select = self
+            let potential_select: Vec<_> = self
                 .selected_slots
                 .iter()
                 .flat_map(|c| self.board.get_node(*c))
                 .chain(Some(node))
-                .collect::<Vec<_>>();
+                .collect();
             Node::select(&potential_select).is_valid()
         }
     }
@@ -249,6 +209,13 @@ impl ModeGame {
         for node in self.board.nodes_iter().flat_map(|(_, node)| node) {
             self.node_count[node.clone()] += 1;
         }
+    }
+
+    fn board_origin_x(&self) -> f32 {
+        (self.board.radius() + 1) as f32 * HEX_WIDTH
+    }
+    fn board_origin_y(&self) -> f32 {
+        (self.board.radius() + 1) as f32 * HEX_HEIGHT * 0.75
     }
 }
 
