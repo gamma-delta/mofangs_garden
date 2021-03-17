@@ -7,7 +7,7 @@ use mofang_engine::{all_unique, Board, Node, PartialResult};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Enum)]
 pub enum SigmarNode {
     Salt,
-    Aether,
+    Quintessence,
     // ATLA order haha yes
     Water,
     Earth,
@@ -33,7 +33,7 @@ impl Node for SigmarNode {
     fn texture_name(&self) -> &'static str {
         match self {
             SigmarNode::Salt => "salt",
-            SigmarNode::Aether => "aether",
+            SigmarNode::Quintessence => "quintessence",
             SigmarNode::Water => "water",
             SigmarNode::Earth => "earth",
             SigmarNode::Fire => "fire",
@@ -57,7 +57,11 @@ impl Node for SigmarNode {
         coord: &Coordinate,
         _selected: &[Coordinate],
     ) -> bool {
-        board.max_open_neighbors(coord) >= 3 && self.downgrade().and_then(|d| board.nodes_iter().find(|(_, n)| *n == Some(&d))).is_none()
+        board.max_open_neighbors(coord) >= 3
+            && self
+                .downgrade()
+                .and_then(|d| board.nodes_iter().find(|(_, n)| *n == Some(&d)))
+                .is_none()
     }
 
     /// Given a list of Nodes, see whether this pattern could exist
@@ -67,14 +71,15 @@ impl Node for SigmarNode {
             [] => unreachable!("You can't select 0 nodes!"),
             [_] => PartialResult::Continue,
             [left, right] if left.cancels_with(right) => PartialResult::Success(vec![None, None]),
-            [SigmarNode::Aether, rest @ ..]
-                if rest.iter().all(|&n| n.is_prime()) && all_unique(rest.iter()) => {
-                    if rest.len() == 4 {
-                        PartialResult::Success(vec![None; 5])
-                    } else {
-                        PartialResult::Continue
-                    }
+            [SigmarNode::Quintessence, rest @ ..]
+                if rest.iter().all(|&n| n.is_prime()) && all_unique(rest.iter()) =>
+            {
+                if rest.len() == 4 {
+                    PartialResult::Success(vec![None; 5])
+                } else {
+                    PartialResult::Continue
                 }
+            }
             _ => PartialResult::Failure,
         }
     }
@@ -94,12 +99,9 @@ impl Node for SigmarNode {
             // Fail if:
             // - there's something here
             // - it's out of bounds
-            let failure = !out.in_bounds(coord) || out.get_node(coord).is_some()
-                || (req_neighbor
-                    && !coord
-                        .neighbors()
-                        .iter()
-                        .any(|&c| out.get_node(c).is_some()));
+            let failure = !out.in_bounds(coord)
+                || out.get_node(coord).is_some()
+                || (req_neighbor && !coord.neighbors().iter().any(|&c| out.get_node(c).is_some()));
             if failure {
                 Some(node)
             } else {
@@ -172,10 +174,7 @@ impl SigmarNode {
     pub fn is_prime(&self) -> bool {
         matches!(
             self,
-            SigmarNode::Water
-                | SigmarNode::Earth
-                | SigmarNode::Fire
-                | SigmarNode::Air
+            SigmarNode::Water | SigmarNode::Earth | SigmarNode::Fire | SigmarNode::Air
         )
     }
     pub fn downgrade(&self) -> Option<SigmarNode> {
@@ -228,11 +227,17 @@ impl SigmarNode {
         }
         if aether {
             for _ in 0..2 {
-                game.push(SigmarNode::Aether);
+                game.push(SigmarNode::Quintessence);
             }
         }
 
-        for node in &[SigmarNode::Lead, SigmarNode::Tin, SigmarNode::Iron, SigmarNode::Copper, SigmarNode::Silver] {
+        for node in &[
+            SigmarNode::Lead,
+            SigmarNode::Tin,
+            SigmarNode::Iron,
+            SigmarNode::Copper,
+            SigmarNode::Silver,
+        ] {
             game.push(node.to_owned());
             game.push(SigmarNode::Quicksilver);
         }
