@@ -51,48 +51,6 @@
 			"creation": "creation"
 		}
 	},
-	"changes": [
-		{
-			"input": [
-				{"type": "engine:mapping-key", "mapping": "cancels", "bind-value": "target"}
-			],
-			"next": {
-				"input": ["@target"],
-				"result": null
-			}
-		},
-		{
-			"input": ["destruction", "wood", "file", "earth", "metal", "water"],
-			"result": null
-		},
-		{
-			"input": ["yin", "yang"],
-			"result": ["change", "change"]
-		},
-		{
-			"input": ["heavenly", "earthly", "human"],
-			"result": null
-		},
-		{
-			"input": [
-				"human",
-				{"type": "engine:tag", "tag": "elemental", "bind": "target"}
-			],
-			"guard": {
-				"type": "engine:has-tag",
-				"tag": "elemental",
-				"target": "@target"
-			},
-			"result": ["@target", null]
-		},
-		{
-			"input": [
-				"change",
-				{"type": "engine:mapping-key", "mapping": "change", "bind-value": "target"}
-			],
-			"result": [null, "@target"]
-		}
-	],
 	"select-condition": {
 		"type": "engine:contiguous-neighbors",
 		"value": {
@@ -122,5 +80,43 @@
 				"else": 3
 			}
 		}
-	}
+	},
+	"changes": [
+		{
+			"input": [
+				{"type": "engine:mapping-key", "mapping": "cancels", "bind-value": "target"}
+			],
+			"result": null,
+			"next": {
+				"input": ["@target"],
+				"result": null
+			}
+		},
+		{
+			"input": ["destruction", "wood", "file", "earth", "metal", "water"],
+			"result": null
+		},
+		{
+			"input": ["yin", "yang"],
+			"result": ["change", "change"]
+		},
+		{
+			"input": ["heavenly", "earthly", "human"],
+			"result": null
+		},
+		{
+			"input": [
+				"human",
+				{"type": "engine:tag", "tag": "elemental", "bind": "target"}
+			],
+			"result": ["@target", null]
+		},
+		{
+			"input": [
+				"change",
+				{"type": "engine:mapping-key", "mapping": "change", "bind-value": "target"}
+			],
+			"result": [null, "@target"]
+		}
+	]
 }

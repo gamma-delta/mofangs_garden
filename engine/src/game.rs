@@ -3,7 +3,7 @@ use crate::evaluation::*;
 use crate::condition::ConditionParser;
 use crate::{engine_conds, engine_matchers};
 use serde_json::{value::Value, map::Map};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub struct GameParser {
     conditions: ConditionMap,
@@ -19,7 +19,7 @@ impl GameParser {
         engine_matchers::register(matches);
         me
     }
-    // TODO: add stubs for registering more things
+    // TODO: please call out to all the parser codes in order
     pub fn parse(&self, value: Value) -> Result<DataGame, String> {
         let mut BaseGame = DataGame {
             id: "",
@@ -27,8 +27,8 @@ impl GameParser {
             tags: HashMap::new(),
             mappings: HashMap::new(),
             board: HashMap::new(),
-            changes: ChangeTree::new(),
             select: eval_const(EvalValue::(0))
+            changes: ChangeTree::new(),
         }
         nodes
     }

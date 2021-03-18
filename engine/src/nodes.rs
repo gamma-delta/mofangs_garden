@@ -34,6 +34,13 @@ pub enum PartialResult<T> {
 }
 
 impl<T> PartialResult<T> {
+    pub fn map<U, F>(self, fun: F) -> PartialResult<U> where F: FnOnce(T) -> U {
+        match self {
+            PartialResult::Success(t) => PartialResult::Success(fun(t)),
+            PartialResult::Continue => PartialResult::Continue,
+            PartialResult::Failure => PartialResult::Failure,
+        }
+    }
     /// Is this a success or a needs-more-info?
     pub fn is_valid(&self) -> bool {
         !matches!(self, PartialResult::Failure)

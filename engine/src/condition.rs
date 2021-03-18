@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::data::{Identifier, DataNode, DataGame};
+use crate::data::{Identifier, DataGame};
 use crate::evaluation::{Evaluation, EvalValue, eval_const};
 use serde_json::{value::Value, map::Map};
 
@@ -30,9 +30,9 @@ impl ConditionParser<'_> {
     }
     pub fn parse(&self, value: &Value) -> Result<Evaluation, String> {
         match value {
-            Value::Null => eval_const(EvalValue::Node(None)),
-            Value::Bool(b) => eval_const(EvalValue::Bool(*b)),
-            Value::Number(n) => eval_const(EvalValue::Number(n.to_owned())),
+            Value::Null => Ok(eval_const(EvalValue::Node(None))),
+            Value::Bool(b) => Ok(eval_const(EvalValue::Bool(*b))),
+            Value::Number(n) => Ok(eval_const(EvalValue::Number(n.to_owned()))),
             Value::String(s) => self.parse_string(s),
             Value::Array(vec) => self.parse_array(vec),
             Value::Object(map) => self.parse_object(map),
@@ -64,7 +64,7 @@ impl ConditionParser<'_> {
         } else {
             let identifier = Identifier::parse(&string, &self.game.id)?;
             if let Some(node) = self.game.nodes.get(&identifier) {
-                eval_const(EvalValue::Node(Some(node.clone())))
+                Ok(eval_const(EvalValue::Node(Some(node.clone()))))
             } else {
                 Err(format!("No such node as {:?} exists", identifier))
             }

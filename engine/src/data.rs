@@ -1,5 +1,5 @@
 use hex2d::Coordinate;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, BTreeMap, BTreeSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Identifier {
@@ -25,8 +25,8 @@ impl Identifier {
 pub struct DataGame {
     pub id: String,
     pub nodes: HashMap<Identifier, DataNode>,
-    pub tags: HashMap<String, HashSet<DataNode>>,
-    pub mappings: HashMap<String, HashMap<DataNode, DataNode>>,
+    pub tags: HashMap<String, BTreeSet<DataNode>>,
+    pub mappings: HashMap<String, BTreeMap<DataNode, DataNode>>,
     board: HashMap<Coordinate, Option<DataNode>>,
 }
 

@@ -83,6 +83,12 @@ impl EvalValue {
             _ => Err(format!("Expected number, got {:?}", self)),
         }
     }
+    pub fn as_node(self) -> Result<Option<DataNode>, String> {
+        match self {
+            EvalValue::Node(n) => Ok(n),
+            _ => Err(format!("Expected node, got {:?}", self)),
+        }
+    }
 }
 
 
@@ -95,6 +101,6 @@ pub struct EvalContext<'a> {
 pub type Evaluation = Box<dyn FnMut(&mut EvalContext) -> Result<EvalValue, String>>;
 pub type Predicate<T> = Box<dyn FnMut(&T, &mut EvalContext) -> Result<bool, String>>;
 
-pub fn eval_const(val: EvalValue) -> Result<Evaluation, String> {
-    Ok(Box::new(move |_| Ok(val.clone())))
+pub fn eval_const(val: EvalValue) -> Evaluation {
+    Box::new(move |_| Ok(val.clone()))
 }
