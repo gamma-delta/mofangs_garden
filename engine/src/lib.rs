@@ -1,4 +1,10 @@
 pub mod nodes;
+pub mod data;
+pub mod evaluation;
+pub mod condition;
+pub mod engine_conds;
+pub mod change;
+pub mod engine_matchers;
 pub use nodes::{Node, PartialResult};
 
 use hex2d::Coordinate;

@@ -1,0 +1,126 @@
+{
+	"name": "Mofang's Garden",
+	"id": "mofang",
+	"elements": [
+		"wood",
+		"fire",
+		"earth",
+		"metal",
+		"water",
+		"heavenly",
+		"earthly",
+		"human",
+		"yin",
+		"yang",
+		"creation",
+		"destruction",
+		"qi"
+	],
+	"tags": {
+		"elemental": [
+			"metal",
+			"wood",
+			"water",
+			"fire",
+			"earth"
+		]
+	},
+	"mappings": {
+		"change": {
+			"wood": "fire",
+			"fire": "earth",
+			"earth": "metal",
+			"metal": "water",
+			"water": "wood",
+
+			"heavenly": "earthly",
+			"earthly": "human",
+			"human": "heavenly"
+		},
+		"cancels": {
+			"fire": "metal",
+			"metal": "wood",
+			"wood": "earth",
+			"earth": "water",
+			"water": "fire",
+			"heavenly": "yang",
+			"yang": "heavenly",
+			"earthly": "yin",
+			"yin": "earthly",
+			"qi": "qi",
+			"creation": "creation"
+		}
+	},
+	"changes": [
+		{
+			"input": [
+				{"type": "engine:mapping-key", "mapping": "cancels", "bind-value": "target"}
+			],
+			"next": {
+				"input": ["@target"],
+				"result": null
+			}
+		},
+		{
+			"input": ["destruction", "wood", "file", "earth", "metal", "water"],
+			"result": null
+		},
+		{
+			"input": ["yin", "yang"],
+			"result": ["change", "change"]
+		},
+		{
+			"input": ["heavenly", "earthly", "human"],
+			"result": null
+		},
+		{
+			"input": [
+				"human",
+				{"type": "engine:tag", "tag": "elemental", "bind": "target"}
+			],
+			"guard": {
+				"type": "engine:has-tag",
+				"tag": "elemental",
+				"target": "@target"
+			},
+			"result": ["@target", null]
+		},
+		{
+			"input": [
+				"change",
+				{"type": "engine:mapping-key", "mapping": "change", "bind-value": "target"}
+			],
+			"result": [null, "@target"]
+		}
+	],
+	"select-condition": {
+		"type": "engine:contiguous-neighbors",
+		"value": {
+			"type": "engine:if",
+			"cond": {
+				"type": "engine:equals",
+				"values": ["qi", "@select-target"]
+			},
+			"then": 5,
+			"else": {
+				"type": "engine:if",
+				"cond": {
+					"type": "engine:and",
+					"values": [
+						{
+							"type": "engine:equals",
+							"values": [["human"], "@current-selection"]
+						},
+						{
+							"type": "engine:has-tag",
+							"tag": "elemental",
+							"target": "@select-target"
+						}
+					]
+				},
+				"then": 2,
+				"else": 3
+			}
+		}
+	}
+}
